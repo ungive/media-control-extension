@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+// FIXME
+// This needs to be refactored, way too complex than need be
+
+// in-use: false
+// field ids and enum and json names may still be changed if in-use is false.
+
+package app.musicpresence.browsermedia;
+
+import "google/protobuf/timestamp.proto";
+
+// -> Hello (first message)
+// <- SubscribeMedia (must be after Hello)
+// -> MediaUpdate (only after SubscribeMedia, may be sent multiple times)
+// ...
+// <- CancelMediaSubscription (only after SubscribeMedia)
+
+// Types
+
+// Browsers that are supported.
+enum BrowserType {
+  BROWSER_TYPE_UNSPECIFIED = 0;
+  // Any generic browser that is not one of the below ones.
+  BROWSER_TYPE_GENERIC = 1;
+  // Major browser flavours
+  BROWSER_TYPE_CHROMIUM = 2;
+  BROWSER_TYPE_FIREFOX = 3;
+  BROWSER_TYPE_SAFARI = 4;
+  // Chromium variations
+  BROWSER_TYPE_CHROMIUM_CHROME = 5;
+  BROWSER_TYPE_CHROMIUM_OPERA = 6;
+  BROWSER_TYPE_CHROMIUM_BRAVE = 7;
+  BROWSER_TYPE_CHROMIUM_EDGE = 8;
+}
+
+// Represents the current state of some active media.
+message MediaState {
+
+  message Source {
+    // The domain name of the media source in reverse domain name notation.
+    // This reverse domain may never end with ".www",
+    // as it makes the reverse domain name only more ambiguous.
+    string reverse_domain = 1 [json_name = "reverse_domain"];
+    // The exact URL of the page that is playing the media.
+    string url = 2 [json_name = "url"];
+  }
+
+  message Metadata {
+    string title = 1 [json_name = "title"];
+    optional string artist = 2 [json_name = "artist"];
+    optional string album = 3 [json_name = "album"];
+    // The length of the media in seconds.
+    // This is optional, as it might not be possible
+    // to determine the duration every time.
+    optional double duration = 4 [json_name = "duration"];
+  }
+
+  message PlaybackState {
+    // Playback position in seconds.
+    double position = 1 [json_name = "position"];
+    // The timestamp at which the position was valid.
+    // Allows to calculate the correct for any point in time,
+    // in case the media is playing and the position is advancing.
+    google.protobuf.Timestamp position_timestamp = 2 [json_name = "position_timestamp"];
+    // Whether the media is currently playing.
+    bool playing = 3 [json_name = "playing"];
+  }
+
+  message Image {
+    oneof content {
+      string url = 1 [json_name = "url"];
+      bytes data = 2 [json_name = "data"];
+    }
+    optional string mime_type = 3 [json_name = "mime_type"];
+    optional uint32 width = 4 [json_name = "width"];
+    optional uint32 height = 5 [json_name = "height"];
+  }
+
+  message ResourceLinks {
+    optional string track_url = 1 [json_name = "track_url"];
+    optional string album_url = 2 [json_name = "album_url"];
+    optional string artist_url = 3 [json_name = "artist_url"];
+  }
+
+  Source source = 1 [json_name = "source"];
+  Metadata metadata = 2 [json_name = "metadata"];
+  PlaybackState playback_state = 3 [json_name = "playback_state"];
+  ResourceLinks resource_links = 4 [json_name = "resource_links"];
+  repeated Image images = 5 [json_name = "images"];
+}
+
+// Messages
+
+// The browser extension connects to the desktop application.
+// The Hello message must be the first message that is sent by the extension.
+// The extension communicates the browser type it is running in,
+// so that the receiver can associate it with the appropriate media
+// that is detected via system APIs.
+message Hello {
+  BrowserType browser_type = 1 [json_name = "browser_type"];
+}
+
+// After the browser extension sent the Hello message,
+// the desktop application can subscribe to live media updates.
+// This message is allowed to be sent multiple times.
+// When it is sent again the subscription is changed to the media sources
+// that were listed in the most recent message.
+// The contents of older messages will be discarded.
+message SubscribeMedia {
+
+  message Website {
+    // Which websites to observe for live media changes.
+    // Uses the same reverse domain name notation as in MediaState.Source.
+    string reverse_domain = 1 [json_name = "reverse_domain"];
+  }
+
+  repeated Website websites = 1 [json_name = "websites"];
+}
+
+// Cancels any active subscription to live media updates
+// that have been registered via previous SubscribeMedia messages.
+// Future MediaUpdate messages will be ignored by the receiver.
+// This is useful for temporarily or permanently pausing live media updates
+// instead of closing the entire connection.
+message CancelMediaSubscription {}
+
+// Sends an update about the current state of active media in the browser.
+// Any subsequent message replaces states from all previous messages.
+message MediaUpdate {
+  repeated MediaState media = 1 [json_name = "media"];
+}
+
+// Wrapper
+message Message {
+  oneof content {
+    Hello hello = 1 [json_name = "hello"];
+    SubscribeMedia subscribe_media = 2 [json_name = "subscribe_media"];
+    CancelMediaSubscription cancel_media_subscription = 3 [json_name = "cancel_media_subscription"];
+    MediaUpdate media_update = 4 [json_name = "media_update"];
+  }
+}
