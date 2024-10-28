@@ -1,0 +1,32 @@
+{
+  "name": "media-control",
+  "description": "View and control all media that is playing in your browser",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "vue-tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "protoc:linux": "echo todo",
+    "protoc:windows": "proto.bat"
+  },
+  "dependencies": {
+    "deep-equal": "^2.2.3",
+    "vue": "^3.4.27"
+  },
+  "devDependencies": {
+    "@types/deep-equal": "^1.0.4",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "ts-proto": "^1.176.1",
+    "typescript": "^5.4.5",
+    "user-agent-data-types": "^0.4.2",
+    "vue-tsc": "^2.0.19",
+    "wxt": "^0.17.12"
+  }
+}
