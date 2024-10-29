@@ -1,4 +1,4 @@
-import { ExtensionMessage, MediaChangedPayload, TabMessage } from "@/lib/messages";
+import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
 import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
 import { Tabs } from "wxt/browser";
@@ -24,6 +24,22 @@ function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
     + "/" + playbackState?.duration + "ms"
     + " " + (playbackState?.playing ? "playing" : "paused")
     + "]";
+}
+
+function sendTabMedia() {
+  const currentMediaPayload: CurrentMediaPayload = { media: [] }
+  for (const [tabId, media] of tabs) {
+    if (media?.state) {
+      currentMediaPayload.media.push({
+        tabId,
+        state: media?.state
+      });
+    }
+  }
+  browser.runtime.sendMessage({
+    type: ExtensionMessage.CurrentMedia,
+    payload: currentMediaPayload
+  } as RuntimeMessage);
 }
 
 function handleTabMedia(
@@ -57,6 +73,11 @@ function handleTabMedia(
   }
   tabs.set(tabId, currentState);
 
+  // Inform open popup views about current media, if there are any.
+  if (browser.extension.getViews({ type: 'popup' }).length > 0) {
+    sendTabMedia();
+  }
+
   // logging
   const ts = new Date(Date.now()).toISOString();
   if (state) {
@@ -68,15 +89,18 @@ function handleTabMedia(
   }
 }
 
-browser.runtime.onMessage.addListener(async (message, sender) => {
-  if (!sender.tab?.id) {
-    // Can't handle messages without a valid tab.
-    return;
-  }
+browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) => {
   switch (message.type) {
+    // Media changed in a tab
     case TabMessage.MediaChanged:
-      const payload = message.data as MediaChangedPayload;
-      handleTabMedia(sender.tab.id, payload.state);
+      if (sender.tab?.id !== undefined) {
+        const mediaChangedPayload = message.payload as MediaChangedPayload;
+        handleTabMedia(sender.tab.id, mediaChangedPayload.state);
+      }
+      break;
+    // The popup requests currently playing media
+    case PopupMessage.GetCurrentMedia:
+      sendTabMedia();
       break;
   }
 });
@@ -94,7 +118,7 @@ async function registerTab(tab: Tabs.Tab) {
   tabs.set(tab.id, null);
   browser.tabs.sendMessage(tab.id, {
     type: ExtensionMessage.SendMediaUpdates
-  });
+  } as RuntimeMessage);
 }
 
 async function unregisterTab(tabId: number, sendCancel: boolean = true) {
@@ -104,7 +128,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   if (sendCancel) {
     browser.tabs.sendMessage(tabId, {
       type: ExtensionMessage.CancelMediaUpdates
-    });
+    } as RuntimeMessage);
   }
   handleTabMedia(tabId, null);
   tabs.delete(tabId);
