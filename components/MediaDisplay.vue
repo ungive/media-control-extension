@@ -66,12 +66,12 @@ function getHostname(url: string): string {
         Media Control
       </h4>
     </div>
-    <div class="flow-root">
+    <div class="flow-root min-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
         <li class="py-3 sm:py-4" v-for="item in items">
           <div class="flex items-center" v-if="item.state.metadata">
             <div class="flex-shrink-0">
-              <img class="w-28 h-28 rounded-md cursor-pointer object-cover object-center"
+              <img class="w-28 h-28 rounded-md cursor-pointer object-cover object-center shadow shadow-black"
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
@@ -81,7 +81,6 @@ function getHostname(url: string): string {
                   class="no-underline hover:underline hover:underline-offset-2 hover:decoration-gray-200">{{
                     item.state.metadata.title }}</a>
               </div>
-              <!-- TODO add a share button with the track link -->
               <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.artist">
                 by
                 <a v-if="item.state.resourceLinks?.artistUrl" :href="item.state.resourceLinks?.artistUrl"
