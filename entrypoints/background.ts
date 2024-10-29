@@ -165,6 +165,11 @@ browser.runtime.onSuspend.addListener(async () => {
 });
 
 async function init() {
+  for (const tab of await browser.tabs.query({})) {
+    if (tab.id !== undefined && tab.audible !== undefined) {
+      onTabAudible(tab.id, tab.audible, tab);
+    }
+  }
   // console.log(BrowserType[Util.getCurrentBrowser()]);
 }
 
