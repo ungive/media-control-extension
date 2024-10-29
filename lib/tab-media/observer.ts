@@ -163,11 +163,6 @@ export class ElementGroupObserver<E extends Object, C extends CallableFunction>
   }
 
   #onElementsChanged(elements: E[]) {
-    if (elements.length === 0) {
-      for (const callback of this.eventCallbacks) {
-        callback(undefined);
-      }
-    }
     this.restart();
   }
 
