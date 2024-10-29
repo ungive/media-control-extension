@@ -99,10 +99,12 @@ export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
     for (const audio of document.querySelectorAll('audio')) {
       elements.push(audio);
     }
-    for (const video of document.querySelectorAll('video')) {
-      elements.push(video);
+    // TIDAL uses "autoplay" for animated covers, this filters them out.
+    // It's probably safe to assume that music is never autoplayed like this.
+    for (const video of document.querySelectorAll('video:not([autoplay])')) {
+      elements.push(video as HTMLVideoElement);
     }
-    const result = [];
+    const result: HTMLMediaElement[] = [];
     for (const media of elements) {
       if (isNaN(media.duration) || media.duration <= 0)
         continue;
