@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { CurrentMediaElementPayload, CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
+import { ShareIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 
@@ -75,8 +76,8 @@ function getHostname(url: string): string {
                 @click="showTab(item.tabId)">
             </div>
             <div class="flex-1 min-w-0 ms-4 text-sm">
-              <div class="font-medium text-gray-900 truncate dark:text-white" :title="item.state.metadata.title">
-                <a @click="showTab(item.tabId)"
+              <div class="font-medium text-gray-900 truncate dark:text-white">
+                <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
                   class="no-underline hover:underline hover:underline-offset-2 hover:decoration-gray-200">{{
                     item.state.metadata.title }}</a>
               </div>
@@ -84,14 +85,15 @@ function getHostname(url: string): string {
               <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.artist">
                 by
                 <a v-if="item.state.resourceLinks?.artistUrl" :href="item.state.resourceLinks?.artistUrl"
-                  target="_blank" class="decoration-gray-600 underline-offset-2">{{
+                  target="_blank" class="decoration-gray-600 underline-offset-2" :title="item.state.metadata.artist">{{
                     item.state.metadata.artist }}</a>
                 <span v-else>{{ item.state.metadata.artist }}</span>
               </div>
               <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.album">
                 on
                 <a v-if="item.state.resourceLinks?.albumUrl" :href="item.state.resourceLinks?.albumUrl" target="_blank"
-                  class="decoration-gray-600 underline-offset-2">{{ item.state.metadata.album }}</a>
+                  class="decoration-gray-600 underline-offset-2" :title="item.state.metadata.album">{{
+                    item.state.metadata.album }}</a>
                 <span v-else>{{ item.state.metadata.album }}</span>
               </div>
               <div class="text-gray-500 truncate dark:text-gray-400"
@@ -100,7 +102,7 @@ function getHostname(url: string): string {
                   :position-timestamp="item.state.playbackState.positionTimestamp"
                   :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
               </div>
-              <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.metadata">
+              <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
                 <div class="flex-shrink-0" v-if="item.state.source?.faviconUrl">
                   <img class="w-4 h-4 mt-1 rounded-md object-cover object-center grayscale"
                     :src="item.state.source?.faviconUrl" alt="Favicon">
@@ -108,6 +110,12 @@ function getHostname(url: string): string {
                 <div class="flex-1 min-w-0 ms-2 text-gray-500" v-if="item.state.source?.siteUrl">
                   <a class="no-underline hover:underline hover:underline-offset-2" @click="showTab(item.tabId)">{{
                     getHostname(item.state.source.siteUrl) }}</a>
+                </div>
+                <div class="flex-shrink-0 ms-2" v-if="item.state.resourceLinks?.trackUrl">
+                  <a :href="item.state.resourceLinks?.trackUrl" target="_blank"
+                    class="text-gray-400 hover:text-gray-300">
+                    <ShareIcon class="size-4 mt-1"></ShareIcon>
+                  </a>
                 </div>
               </div>
             </div>
