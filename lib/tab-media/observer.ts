@@ -447,14 +447,11 @@ export class TabMediaObserver {
     switch (stateChange) {
       case TabMediaStateChange.StartedPlaying:
       case TabMediaStateChange.TrackChanged:
-        // FIXME not implemented yet so we catch bugs
-        // this.estimatedTrackStartTime = Date.now();
+        this.estimatedTrackStartTime = Date.now();
         if (state?.playbackState.source === PlaybackStateSource.Estimated) {
           state = new TabMediaState({
-            // url: state.url,
             mediaMetadata: state.mediaMetadata,
             playbackState: this.#estimatedPlaybackPosition(state.playbackState.playing),
-            // resourceLinks: state.resourceLinks,
           });
         }
     }
@@ -532,7 +529,6 @@ export class TabMediaObserver {
     });
   }
 
-  // TODO implement this properly
   #estimatedPlaybackPosition(isPlaying: boolean): TabMediaPlaybackState {
     if (this.estimatedTrackStartTime === null) {
       this.estimatedTrackStartTime = Date.now();
