@@ -76,11 +76,11 @@ function getHostname(url: string): string {
             </div>
             <div class="flex-1 min-w-0 ms-4 text-sm">
               <div class="font-medium text-gray-900 truncate dark:text-white" :title="item.state.metadata.title">
-                <a v-if="item.state.resourceLinks?.trackUrl" :href="item.state.resourceLinks?.trackUrl" target="_blank"
-                  class="decoration-gray-600 underline-offset-2">{{
+                <a @click="showTab(item.tabId)"
+                  class="no-underline hover:underline hover:underline-offset-2 hover:decoration-gray-200">{{
                     item.state.metadata.title }}</a>
-                <span v-else>{{ item.state.metadata.title }}</span>
               </div>
+              <!-- TODO add a share button with the track link -->
               <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.artist">
                 by
                 <a v-if="item.state.resourceLinks?.artistUrl" :href="item.state.resourceLinks?.artistUrl"
