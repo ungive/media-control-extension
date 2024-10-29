@@ -45,7 +45,8 @@ function init() {
   // fix this by sleeping until the next full second.
   interval = setInterval(() => {
     livePosition.value = playbackState.livePosition();
-    const rawPercent = livePosition.value / (props.duration! * 1000) * 100;
+    const value = livePosition.value <= 1 ? 1 : livePosition.value;
+    const rawPercent = value / (props.duration! * 1000) * 100;
     progressPercent.value = Math.min(100, Math.max(0, rawPercent));
   }, 100);
 }
