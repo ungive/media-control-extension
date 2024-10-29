@@ -1,14 +1,14 @@
-import { BrowserMedia } from "@/lib/browser-media";
-import { Media } from "@/lib/media";
+import { ExtensionMessage, TabMessage } from "@/lib/messages";
 import { Proto } from "@/lib/proto";
-import { ReverseDomain } from "@/lib/util";
+import { PlaybackState } from "@/lib/tab-media/playback-state";
+import { ReverseDomain } from "@/lib/util/reverse-domain";
 import { Tabs } from "wxt/browser";
 
 const tabs: Set<number> = new Set();
 
 function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
   const playbackState = state.playbackState ?
-    new Media.PlaybackState(
+    new PlaybackState(
       state.playbackState?.position * 1000,
       state.metadata?.duration ? state.metadata?.duration * 1000 : null,
       state.playbackState?.playing,
@@ -51,7 +51,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     return;
   }
   switch (message.type) {
-    case BrowserMedia.TabMessage.MediaChanged:
+    case TabMessage.MediaChanged:
       const state = message.data as Proto.BrowserMedia.MediaState;
       if (state.playbackState?.playing) {
         handleTabMedia(sender.tab?.id, sender.tab, state);
@@ -75,7 +75,7 @@ async function registerTab(tab: Tabs.Tab) {
   }
   tabs.add(tab.id);
   browser.tabs.sendMessage(tab.id, {
-    type: BrowserMedia.ExtensionMessage.SendMediaUpdates
+    type: ExtensionMessage.SendMediaUpdates
   });
 }
 
@@ -86,7 +86,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
   if (sendCancel) {
     browser.tabs.sendMessage(tabId, {
-      type: BrowserMedia.ExtensionMessage.CancelMediaUpdates
+      type: ExtensionMessage.CancelMediaUpdates
     });
   }
   handleTabMedia(tabId, null, null);

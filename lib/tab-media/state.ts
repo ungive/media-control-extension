@@ -1,7 +1,9 @@
-import { Media } from "@/lib/media";
-import { Constants, Proto, ResourceType } from ".";
-import { ReverseDomain } from "../util";
 import deepEqual from "deep-equal";
+import { BrowserMedia } from "../proto";
+import { ReverseDomain } from "../util/reverse-domain";
+import { Constants } from "./constants";
+import { PlaybackState } from "./playback-state";
+import { ResourceType } from "./resource-links";
 
 /**
  * A descriptor for where the current playback state has been obtained from,
@@ -30,7 +32,7 @@ export enum PlaybackStateSource {
   Estimated
 }
 
-export class TabMediaPlaybackState extends Media.PlaybackState {
+export class TabMediaPlaybackState extends PlaybackState {
 
   private _source: PlaybackStateSource
 
@@ -48,11 +50,6 @@ export class TabMediaPlaybackState extends Media.PlaybackState {
   get source(): PlaybackStateSource { return this._source; }
 }
 
-export interface ITabMediaState {
-  playbackState: TabMediaPlaybackState
-  mediaMetadata: MediaMetadata | null
-}
-
 export enum TabMediaStateChange {
   StartedPlaying,
   PlaybackStateChanged,
@@ -60,33 +57,48 @@ export enum TabMediaStateChange {
   Nothing
 }
 
+export interface ITabMediaState {
+  playbackState: TabMediaPlaybackState
+  mediaMetadata: MediaMetadata | null
+}
+
 /**
  * Represents the current state of media playback in a browser tab.
  * If any of the fields have different values,
  * the media state is considered updated.
  */
-export class TabMediaState2 implements ITabMediaState {
+export class TabMediaState implements ITabMediaState {
 
-  constructor(
-    private _mediaMetadata: MediaMetadata | null,
-    private _playbackState: TabMediaPlaybackState
-  ) {}
+  readonly mediaMetadata: MediaMetadata | null
+  readonly playbackState: TabMediaPlaybackState
 
-  static from(o: ITabMediaState): TabMediaState2 {
-    return new TabMediaState2(o.mediaMetadata, o.playbackState);
+  constructor(o: ITabMediaState) {
+    // Make a deep copy of the metadata because if we keep a reference,
+    // it might be updated in the meantime or cause other issues,
+    // since objects of that type are owned by the browser runtime.
+    this.mediaMetadata = o.mediaMetadata ? {
+      title: o.mediaMetadata.title,
+      artist: o.mediaMetadata.artist,
+      album: o.mediaMetadata.album,
+      artwork: o.mediaMetadata.artwork.map(e => {
+        return {
+          src: e.src,
+          sizes: e.sizes,
+          type: e.type
+        }
+      }),
+    } : null
+    this.playbackState = o.playbackState
   }
-
-  get mediaMetadata(): MediaMetadata | null { return this._mediaMetadata; }
-  get playbackState(): TabMediaPlaybackState { return this._playbackState; }
 
   /**
    * Compares the current state to a previous state
    * and determines what exactly has changed.
-   * 
+   *
    * @param previousState The previous state to compare to.
    * @returns A {@link TabMediaStateChange} value indicating what has changed.
    */
-  determineChanges(previousState: TabMediaState2 | null | undefined): TabMediaStateChange {
+  determineChanges(previousState: TabMediaState | null | undefined): TabMediaStateChange {
     if (!previousState) {
       return TabMediaStateChange.StartedPlaying;
     }
@@ -104,21 +116,13 @@ export class TabMediaState2 implements ITabMediaState {
     return TabMediaStateChange.Nothing;
   }
 
-  // TODO: resource links should be made part of TabMediaState
-  // and then cached by the controller/observer for reusing.
-  // also the URL/hostname can be made part of the media state,
-  // which would make toProto() a method without any parameters.
   /**
    * Serializes the current media state into its respective protobuf type.
-   * 
-   * @param url 
-   * @param resourceLinks 
-   * @returns 
    */
-  toProto(
+  serialize(
     url: URL,
     resourceLinks: Map<ResourceType, string>
-  ): Proto.MediaState {
+  ): BrowserMedia.MediaState {
     return {
       source: {
         reverseDomain: ReverseDomain.forUrl(url),
@@ -140,7 +144,7 @@ export class TabMediaState2 implements ITabMediaState {
         albumUrl: resourceLinks.get(ResourceType.Album) ?? undefined,
         artistUrl: resourceLinks.get(ResourceType.Artist) ?? undefined
       },
-      images: this.mediaMetadata?.artwork.map((a): Proto.MediaState_Image => {
+      images: this.mediaMetadata?.artwork.map((a): BrowserMedia.MediaState_Image => {
         const sizes = a.sizes?.split('x');
         return {
           url: a.src,
@@ -151,4 +155,16 @@ export class TabMediaState2 implements ITabMediaState {
       }) ?? []
     };
   }
+}
+
+/**
+ * Checks whether a media element is considered paused.
+ *
+ * @param element The media element.
+ * @returns Whether the media element is considered paused.
+ */
+export function isMediaElementPaused(element: HTMLMediaElement): boolean {
+  // Muted media is considered paused for now,
+  // as the background script detects playing media through "audible" tabs.
+  return element.paused || element.muted;
 }

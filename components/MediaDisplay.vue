@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { BrowserMedia } from '@/lib/browser-media';
+import { TabMessage } from '@/lib/messages';
 import { Proto } from '@/lib/proto';
-import { ref, Ref } from 'vue';
+import { ref } from 'vue';
 interface MediaInfo {
   tabId: number | null
   title: string
@@ -28,20 +28,20 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     return;
   }
   switch (message.type) {
-  case BrowserMedia.TabMessage.MediaChanged:
-    const state = message.data as Proto.BrowserMedia.MediaState;
-    items.value = [
-      {
-        tabId: sender.tab.id,
-        title: state.metadata?.title || '?',
-        artist: state.metadata?.artist,
-        album: state.metadata?.album,
-        position: state.playbackState?.position,
-        duration: state.metadata?.duration,
-        playing: state.playbackState?.playing || false
-      }
-    ];
-    return;
+    case TabMessage.MediaChanged:
+      const state = message.data as Proto.BrowserMedia.MediaState;
+      items.value = [
+        {
+          tabId: sender.tab.id,
+          title: state.metadata?.title || '?',
+          artist: state.metadata?.artist,
+          album: state.metadata?.album,
+          position: state.playbackState?.position,
+          duration: state.metadata?.duration,
+          playing: state.playbackState?.playing || false
+        }
+      ];
+      return;
   }
 });
 function showTab(tabId: number) {

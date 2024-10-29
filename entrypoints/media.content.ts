@@ -1,4 +1,6 @@
-import { BrowserMedia, TabMediaObserver } from "@/lib/browser-media";
+
+import { ExtensionMessage } from "@/lib/messages";
+import { TabMediaObserver } from "@/lib/tab-media/observer";
 
 /**
  * Creates a hook for audio elements that are created in the future,
@@ -24,14 +26,14 @@ let mediaObserver: TabMediaObserver | null = null;
 browser.runtime.onMessage.addListener(({ type }) => {
   if (!mediaObserver) {
     console.debug('missed a browser runtime message:',
-      BrowserMedia.ExtensionMessage[type]);
+      ExtensionMessage[type]);
     return;
   }
   switch (type) {
-    case BrowserMedia.ExtensionMessage.SendMediaUpdates:
+    case ExtensionMessage.SendMediaUpdates:
       mediaObserver.start();
       break;
-    case BrowserMedia.ExtensionMessage.CancelMediaUpdates:
+    case ExtensionMessage.CancelMediaUpdates:
       mediaObserver.stop();
       break;
   }
