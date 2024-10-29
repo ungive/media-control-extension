@@ -1,64 +1,10 @@
-import { Constants } from "../constants";
-import { ProgressElement, ProgressElementPrecision } from "../progress-element";
-
-/**
- * Represents an arbitrary source for getting elements in the DOM.
- */
-export interface IElementSource<E> {
-  get(): E[];
-}
-
-/**
- * Observes an element source to check if new elements are returned
- * or elements that have been returned previously have disappeared.
- */
-export class ElementSourceObserver<E extends Object> {
-
-  private listener: ((elements: E[]) => void) | null = null
-  private intervalTimeout: NodeJS.Timeout | null = null
-  private previousElements: E[] = []
-
-  constructor(private source: IElementSource<E>) { }
-
-  setListener(callback: (elements: E[]) => void) {
-    this.listener = callback
-  }
-
-  start(currentElements: E[] = []) {
-    const self = this;
-    this.previousElements = currentElements;
-    this.intervalTimeout = setInterval(this.#intervalCallback.bind(this), 1000);
-    setTimeout(this.#intervalCallback.bind(this), 0);
-  }
-
-  stop() {
-    if (this.intervalTimeout !== null) {
-      clearInterval(this.intervalTimeout);
-      this.intervalTimeout = null;
-    }
-    this.previousElements = [];
-  }
-
-  #intervalCallback() {
-    if (this.listener === null)
-      return;
-    const elements = this.source.get();
-    if (elements.length !== this.previousElements.length) {
-      this.listener(elements);
-      this.previousElements = elements;
-      return;
-    }
-    for (let i = 0; i < elements.length; i++) {
-      const a = elements[i];
-      const b = this.previousElements[i];
-      if (a.valueOf() !== b.valueOf()) {
-        this.listener(elements);
-        this.previousElements = elements;
-        return;
-      }
-    }
-  }
-}
+import { TabMessage } from "@/lib/messages";
+import { ReverseDomain } from "@/lib/util/reverse-domain";
+import { Constants } from "./constants";
+import { ElementSourceObserver, IElementSource, TabMediaElementSource, TabProgressElementSource } from "./element-source";
+import { ProgressElement, ProgressElementPrecision } from "./progress-element";
+import { findBestMatchingResourceLinks, ResourceLinkPatterns } from "./resource-links";
+import { isMediaElementPaused, PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
 
 /**
  * Represents a strategy for observing elements in the DOM.
@@ -416,5 +362,186 @@ export class PlaybackPositionProgressElementObserver
         ]
       }
     };
+  }
+}
+
+enum TabMediaObserverState {
+  Idle,
+  Observing,
+}
+
+export type MediaElementObserver = ElementGroupObserver<HTMLMediaElement, ElementEventCallback<HTMLMediaElement>>;
+
+export class TabMediaObserver {
+
+  private observerState: TabMediaObserverState = TabMediaObserverState.Idle
+
+  private mediaElementObserver: MediaElementObserver;
+  private progressElementObserver: PlaybackPositionProgressElementObserver;
+  private currentMediaElement: HTMLMediaElement | null = null;
+  private currentProgressElement: ProgressElement | null = null;
+  private estimatedTrackStartTime: number | null = null
+  private previousMediaState: TabMediaState | null = null
+  // TODO set the interval to check every second for undetected changes
+  private updateInterval: NodeJS.Timeout | null = null
+
+  constructor() {
+    this.mediaElementObserver = new ElementGroupObserver(
+      new TabMediaElementSource(),
+      new EventListenerObservationStrategy(
+        ['play', 'pause', 'timeupdate', 'durationchange']
+      )
+    );
+    this.progressElementObserver = new PlaybackPositionProgressElementObserver(
+      new TabProgressElementSource()
+    );
+    this.mediaElementObserver.addEventListener(this.#onMediaElementUpdated.bind(this))
+    this.progressElementObserver.addEventListener(this.#onProgressElementUpdated.bind(this))
+  }
+
+  // onMediaUpdate: (state: TabMediaState2) => void = () => {}
+
+  start(): void {
+    if (this.observerState == TabMediaObserverState.Observing)
+      return;
+    this.observerState = TabMediaObserverState.Observing;
+    this.mediaElementObserver.restart();
+    this.progressElementObserver.restart();
+  }
+
+  stop(): void {
+    if (this.observerState == TabMediaObserverState.Idle)
+      return;
+    this.mediaElementObserver.stop();
+    this.progressElementObserver.stop();
+    this.currentMediaElement = null;
+    this.currentProgressElement = null;
+    this.observerState = TabMediaObserverState.Idle;
+  }
+
+  #onMediaElementUpdated(element: HTMLMediaElement) {
+    this.currentMediaElement = element;
+    this.#handleUpdate();
+  }
+
+  #onProgressElementUpdated(element: ProgressElement) {
+    this.currentProgressElement = element;
+    this.#handleUpdate();
+  }
+
+  #handleUpdate() {
+    let state = this.#currentMediaState();
+    const stateChange = state.determineChanges(this.previousMediaState);
+    if (stateChange === TabMediaStateChange.Nothing) {
+      return;
+    }
+    switch (stateChange) {
+      case TabMediaStateChange.StartedPlaying:
+      case TabMediaStateChange.TrackChanged:
+        // FIXME not implemented yet so we catch bugs
+        // this.estimatedTrackStartTime = Date.now();
+        if (state?.playbackState.source === PlaybackStateSource.Estimated) {
+          state = new TabMediaState({
+            // url: state.url,
+            mediaMetadata: state.mediaMetadata,
+            playbackState: this.#estimatedPlaybackPosition(state.playbackState.playing),
+            // resourceLinks: state.resourceLinks,
+          });
+        }
+    }
+    const url = new URL(window.location.href);
+    const reverseDomain = ReverseDomain.forUrl(url);
+    browser.runtime.sendMessage({
+      type: TabMessage.MediaChanged,
+      data: state.serialize(
+        url,
+        state.mediaMetadata
+          ? findBestMatchingResourceLinks(
+            state.mediaMetadata,
+            reverseDomain in Constants.URL_MATCHES
+              ? Constants.URL_MATCHES[reverseDomain]
+              : ({} as ResourceLinkPatterns)
+          )
+          : new Map()
+      ),
+    });
+    this.previousMediaState = state;
+  }
+
+  #currentMediaState(): TabMediaState {
+    const isPlaying = navigator.mediaSession.playbackState !== "paused"
+      && (navigator.mediaSession.playbackState === "playing"
+        || !this.currentMediaElement
+        || !isMediaElementPaused(this.currentMediaElement));
+
+    let playbackState: TabMediaPlaybackState | null = null;
+    if (this.currentMediaElement) {
+      playbackState = new TabMediaPlaybackState(
+        PlaybackStateSource.MediaElement,
+        Math.floor(this.currentMediaElement.currentTime * 1000),
+        Math.floor(this.currentMediaElement.duration * 1000),
+        isPlaying,
+        Date.now()
+      );
+    }
+    else if (this.currentProgressElement !== null
+      && this.currentProgressElement.value !== null
+      && this.currentProgressElement.max !== null
+    ) {
+      let playbackStateSource: PlaybackStateSource | null = null;
+      switch (this.currentProgressElement.valuePrecision) {
+        case ProgressElementPrecision.Milliseconds:
+          playbackStateSource = PlaybackStateSource.ProgressElementMilliseconds
+          break;
+        case ProgressElementPrecision.Seconds:
+          playbackStateSource = PlaybackStateSource.ProgressElementSeconds
+          break;
+        default:
+          console.assert(false, "invalid progress element precision");
+          playbackStateSource = PlaybackStateSource.Estimated;
+          break;
+      }
+      playbackState = new TabMediaPlaybackState(
+        playbackStateSource,
+        Math.floor(this.currentProgressElement.value),
+        Math.floor(this.currentProgressElement.max),
+        isPlaying,
+        Date.now()
+      );
+    }
+    else {
+      playbackState = this.#estimatedPlaybackPosition(isPlaying);
+    }
+
+    const url = new URL(window.location.href);
+    const reverseDomain = ReverseDomain.forUrl(url);
+    const metadata = navigator.mediaSession.metadata;
+    return new TabMediaState({
+      // url: url,
+      mediaMetadata: metadata,
+      playbackState: playbackState,
+      // resourceLinks: metadata
+      //   ? findBestMatchingResourceLinks(
+      //     metadata,
+      //     reverseDomain in Constants.URL_MATCHES
+      //       ? Constants.URL_MATCHES[reverseDomain]
+      //       : ({} as ResourceLinkPatterns)
+      //   )
+      //   : new Map()
+    });
+  }
+
+  // TODO implement this properly
+  #estimatedPlaybackPosition(isPlaying: boolean): TabMediaPlaybackState {
+    if (this.estimatedTrackStartTime === null) {
+      this.estimatedTrackStartTime = Date.now();
+    }
+    const now = Date.now();
+    const startTime = this.estimatedTrackStartTime;
+    const position = now - startTime;
+    return new TabMediaPlaybackState(
+      PlaybackStateSource.Estimated,
+      position, null, isPlaying, now
+    );
   }
 }
