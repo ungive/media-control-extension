@@ -1,12 +1,12 @@
-
-import { ExtensionMessage } from "@/lib/messages";
+import { ExtensionMessage, TabMessage } from "@/lib/messages";
+import { BrowserMedia } from "@/lib/proto";
 import { TabMediaObserver } from "@/lib/tab-media/observer";
 
 /**
  * Creates a hook for audio elements that are created in the future,
  * by adding them to the DOM, so they can be retrieved with query selectors,
- * since audio elements can play media in a user-friendly way
- * without being added to the DOM [citation needed].
+ * since audio elements can play media in a user-friendly way without being
+ * added to the DOM [citation needed].
  */
 function hookFutureAudioElements() {
   ['play', 'pause'].forEach(method => {
@@ -25,13 +25,12 @@ let mediaObserver: TabMediaObserver | null = null;
 
 browser.runtime.onMessage.addListener(({ type }) => {
   if (!mediaObserver) {
-    console.debug('missed a browser runtime message:',
-      ExtensionMessage[type]);
+    console.assert(false, 'Media observer not initialized');
     return;
   }
   switch (type) {
     case ExtensionMessage.SendMediaUpdates:
-      mediaObserver.start();
+      mediaObserver.restart();
       break;
     case ExtensionMessage.CancelMediaUpdates:
       mediaObserver.stop();
@@ -39,10 +38,17 @@ browser.runtime.onMessage.addListener(({ type }) => {
   }
 });
 
+function onMediaUpdated(state: BrowserMedia.MediaState) {
+  browser.runtime.sendMessage({
+    type: TabMessage.MediaChanged,
+    data: state,
+  });
+}
+
 function init() {
   hookFutureAudioElements();
   mediaObserver = new TabMediaObserver();
-  // TODO handle media changes here, not in observer/tab-media.ts
+  mediaObserver.addEventListener(onMediaUpdated);
 }
 
 export default defineContentScript({
