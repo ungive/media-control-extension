@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { CurrentMediaElementPayload, CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
+import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 
@@ -77,6 +77,18 @@ function playMedia(tabId: number) {
     type: PopupMessage.PlayMedia
   } as RuntimeMessage);
 }
+
+function nextTrack(tabId: number) {
+  browser.tabs.sendMessage(tabId, {
+    type: PopupMessage.NextTrack
+  } as RuntimeMessage);
+}
+
+function seekStart(tabId: number) {
+  browser.tabs.sendMessage(tabId, {
+    type: PopupMessage.SeekStart
+  } as RuntimeMessage);
+}
 </script>
 
 <template>
@@ -134,6 +146,12 @@ function playMedia(tabId: number) {
               </div>
               <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
                 <div class="flex-shrink-0 -ms-0.5">
+                  <a @click="seekStart(item.tabId)" title="Replay this track"
+                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                    <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
+                  </a>
+                </div>
+                <div class="flex-shrink-0 ms-2">
                   <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
                     class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
                     <PauseIcon class="size-4 mt-1"></PauseIcon>
@@ -143,7 +161,13 @@ function playMedia(tabId: number) {
                     <PlayIcon class="size-4 mt-1"></PlayIcon>
                   </a>
                 </div>
-                <div class="flex-1 min-w-0 ms-2" v-if="item.state.source?.siteUrl">
+                <div class="flex-shrink-0 ms-2">
+                  <a @click="nextTrack(item.tabId)" title="Next track"
+                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                    <ForwardIcon class="size-4 mt-1"></ForwardIcon>
+                  </a>
+                </div>
+                <div class="flex-1 min-w-0 ms-2.5" v-if="item.state.source?.siteUrl">
                   <a class="no-underline text-gray-500 hover:text-gray-400 transition-colors duration-200"
                     @click="showTab(item.tabId)">{{
                       getHostname(item.state.source.siteUrl) }}</a>
@@ -155,9 +179,9 @@ function playMedia(tabId: number) {
                     <ShareIcon class="size-4 mt-1"></ShareIcon>
                   </a>
                 </div>
-                <div class="flex-shrink-0 ms-3 me-0" v-if="item.state.source?.faviconUrl">
-                  <a :href="getHomepage(item.state.source.siteUrl)" :title="getHostname(item.state.source.siteUrl)"
-                    target="_blank">
+                <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
+                  <a :href="getHomepage(item.state.source.siteUrl)"
+                    :title="'Open ' + getHostname(item.state.source.siteUrl)" target="_blank">
                     <img class="w-4 h-4 mt-1 rounded-md object-cover object-center grayscale"
                       :src="item.state.source?.faviconUrl" alt="Favicon">
                   </a>
