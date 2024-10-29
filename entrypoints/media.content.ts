@@ -41,6 +41,13 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
           lastInteractedMediaElement = mediaElement;
         }
       }
+      else if (lastInteractedMediaElement !== null && lastInteractedMediaElement.paused) {
+        lastInteractedMediaElement.play();
+        if (lastInteractedMediaElement.paused) {
+          // Still paused, so remove it.
+          lastInteractedMediaElement = null;
+        }
+      }
       break;
     }
   }
