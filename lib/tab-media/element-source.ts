@@ -104,12 +104,11 @@ export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
     for (const video of document.querySelectorAll('video:not([autoplay])')) {
       elements.push(video as HTMLVideoElement);
     }
-    const result: HTMLMediaElement[] = [];
     for (const media of elements) {
-      if (isNaN(media.duration) || media.duration <= 0)
+      if (isMediaElementPaused(media) || isNaN(media.duration) || media.duration <= 0)
         continue;
-      result.push(media);
+      return [media];
     }
-    return result;
+    return [];
   }
 }
