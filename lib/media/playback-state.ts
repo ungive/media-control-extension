@@ -16,7 +16,7 @@ export class PlaybackState {
    * @param positionTimestamp The timestamp for the given playback position.
    */
   constructor(position: number, duration: number | null,
-              playing: boolean, positionTimestamp = Date.now()) {
+    playing: boolean, positionTimestamp = Date.now()) {
     if (positionTimestamp < 0) {
       throw Error('timestamp may not be negative');
     }
@@ -31,7 +31,7 @@ export class PlaybackState {
 
   /**
    * Constructs a {@link PlaybackState} from another playback state.
-   * 
+   *
    * @param other The other playback state.
    * @returns A new {@link PlaybackState} instance.
    */
@@ -44,7 +44,7 @@ export class PlaybackState {
    * Returns the playback position as it was at the given point in time.
    * If the point lies too far in the past the method will return 0,
    * if it is beyond the duration it will return the duration.
-   * 
+   *
    * @param when The point in time given as an epoch timestamp in milliseconds.
    * @returns The playback position at the given point in time.
    */
@@ -66,7 +66,7 @@ export class PlaybackState {
   /**
    * Checks whether the two playback positions are identical,
    * within the bounds of a given epsilon.
-   * 
+   *
    * @param epsilon The allowed error in milliseconds.
    * @returns Whether the two playback positions are considered equal.
    */

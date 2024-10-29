@@ -54,7 +54,7 @@ export class ProgressElement implements IProgressElement {
   set targetPrecision(value: ProgressElementPrecision) { this._targetPrecision = value; }
 
   get multiplier(): number { return this._targetPrecision / this._valuePrecision; }
-  
+
   #getFloat(name: string): number | null {
     const value = this._element.getAttribute(name);
     return value ? parseFloat(value) * this.multiplier : null;
@@ -104,7 +104,7 @@ export class ProgressElementFactory {
   }
 }
 
-export  class InputRangeProgressElementFactory extends ProgressElementFactory {
+export class InputRangeProgressElementFactory extends ProgressElementFactory {
   constructor() {
     super('input[type="range"]', 'min', 'max', 'value');
   }

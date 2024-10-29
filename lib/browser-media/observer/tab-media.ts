@@ -1,14 +1,14 @@
 import { ReverseDomain } from "@/lib/util";
-import { Constants } from "../constants"
+import { BrowserMedia, findBestMatchingResourceLinks, ResourceLinkPatterns } from "..";
+import { Constants } from "../constants";
 import {
   AriaProgressElementFactory,
   InputRangeProgressElementFactory,
   ProgressElement,
   ProgressElementPrecision
-} from "../progress-element"
-import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState2, TabMediaStateChange } from "../state"
-import { ElementEventCallback, ElementGroupObserver, ElementSourceObserver, EventListenerObservationStrategy, IElementSource, PlaybackPositionProgressElementObserver } from "./media-element"
-import { BrowserMedia, findBestMatchingResourceLinks, ResourceLinkPatterns } from "..";
+} from "../progress-element";
+import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState2, TabMediaStateChange } from "../state";
+import { ElementEventCallback, ElementGroupObserver, EventListenerObservationStrategy, IElementSource, PlaybackPositionProgressElementObserver } from "./media-element";
 
 /**
  * Observes progress elements on the page
@@ -40,7 +40,7 @@ export class TabProgressElementSource
 
 /**
  * Checks whether a media element is considered paused.
- * 
+ *
  * @param element The media element.
  * @returns Whether the media element is considered paused.
  */
@@ -150,16 +150,16 @@ export class TabMediaObserver {
       return;
     }
     switch (stateChange) {
-    case TabMediaStateChange.StartedPlaying:
-    case TabMediaStateChange.TrackChanged:
-      // FIXME not implemented yet so we catch bugs
-      // this.estimatedTrackStartTime = Date.now();
-      if (state?.playbackState.source === PlaybackStateSource.Estimated) {
-        state = TabMediaState2.from({
-          mediaMetadata: state.mediaMetadata,
-          playbackState: this.#estimatedPlaybackPosition(state.playbackState.playing)
-        });
-      }
+      case TabMediaStateChange.StartedPlaying:
+      case TabMediaStateChange.TrackChanged:
+        // FIXME not implemented yet so we catch bugs
+        // this.estimatedTrackStartTime = Date.now();
+        if (state?.playbackState.source === PlaybackStateSource.Estimated) {
+          state = TabMediaState2.from({
+            mediaMetadata: state.mediaMetadata,
+            playbackState: this.#estimatedPlaybackPosition(state.playbackState.playing)
+          });
+        }
     }
     const url = new URL(window.location.href);
     const reverseDomain = ReverseDomain.forUrl(url);
@@ -167,7 +167,7 @@ export class TabMediaObserver {
       type: BrowserMedia.TabMessage.MediaChanged,
       data: state.toProto(
         url,
-        state.mediaMetadata 
+        state.mediaMetadata
           ? findBestMatchingResourceLinks(
             state.mediaMetadata,
             reverseDomain in Constants.URL_MATCHES
@@ -201,16 +201,16 @@ export class TabMediaObserver {
     ) {
       let playbackStateSource: PlaybackStateSource | null = null;
       switch (this.currentProgressElement.valuePrecision) {
-      case ProgressElementPrecision.Milliseconds:
-        playbackStateSource = PlaybackStateSource.ProgressElementMilliseconds
-        break;
-      case ProgressElementPrecision.Seconds:
-        playbackStateSource = PlaybackStateSource.ProgressElementSeconds
-        break;
-      default:
-        console.assert(false, "invalid progress element precision");
-        playbackStateSource = PlaybackStateSource.Estimated;
-        break;
+        case ProgressElementPrecision.Milliseconds:
+          playbackStateSource = PlaybackStateSource.ProgressElementMilliseconds
+          break;
+        case ProgressElementPrecision.Seconds:
+          playbackStateSource = PlaybackStateSource.ProgressElementSeconds
+          break;
+        default:
+          console.assert(false, "invalid progress element precision");
+          playbackStateSource = PlaybackStateSource.Estimated;
+          break;
       }
       playbackState = new TabMediaPlaybackState(
         playbackStateSource,

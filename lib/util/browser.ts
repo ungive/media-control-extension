@@ -10,11 +10,11 @@ declare global {
 
 export {
   BrowserType
-}
+};
 
 /**
  * Get the current browser this background or content script is running in.
- * 
+ *
  * @returns The {@link Proto.BrowserMedia.BrowserType}
  * for the current browser.
  */

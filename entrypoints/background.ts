@@ -1,8 +1,8 @@
-import { Tabs } from "wxt/browser";
 import { BrowserMedia } from "@/lib/browser-media";
 import { Media } from "@/lib/media";
 import { Proto } from "@/lib/proto";
-import { Util, BrowserType, ReverseDomain } from "@/lib/util";
+import { ReverseDomain } from "@/lib/util";
+import { Tabs } from "wxt/browser";
 
 const tabs: Set<number> = new Set();
 
@@ -33,7 +33,7 @@ function handleTabMedia(
 ) {
   const ts = new Date(Date.now()).toISOString();
   if (state && tab && tab.url) {
-    const encoded = JSON.stringify(Proto.BrowserMedia.MediaUpdate.toJSON({media: [state]}));
+    const encoded = JSON.stringify(Proto.BrowserMedia.MediaUpdate.toJSON({ media: [state] }));
     console.log(ts, tabId, state.source?.reverseDomain, tabMediaStateToString(state), state, encoded);
   }
   else {
@@ -51,15 +51,15 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     return;
   }
   switch (message.type) {
-  case BrowserMedia.TabMessage.MediaChanged:
-    const state = message.data as Proto.BrowserMedia.MediaState;
-    if (state.playbackState?.playing) {
-      handleTabMedia(sender.tab?.id, sender.tab, state);
-    }
-    else {
-      handleTabMedia(sender.tab?.id, sender.tab, null);
-    }
-    return;
+    case BrowserMedia.TabMessage.MediaChanged:
+      const state = message.data as Proto.BrowserMedia.MediaState;
+      if (state.playbackState?.playing) {
+        handleTabMedia(sender.tab?.id, sender.tab, state);
+      }
+      else {
+        handleTabMedia(sender.tab?.id, sender.tab, null);
+      }
+      return;
   }
 });
 
@@ -117,13 +117,14 @@ browser.tabs.onRemoved.addListener(async (tabId) => {
   unregisterTab(tabId);
 });
 
-async function init() {
-  console.log(BrowserType[Util.getCurrentBrowser()]);
-}
-
 browser.runtime.onSuspend.addListener(async () => {
+  // TODO what to do on suspend?
   console.log('on suspend');
 });
+
+async function init() {
+  // console.log(BrowserType[Util.getCurrentBrowser()]);
+}
 
 export default defineBackground({
   persistent: true,

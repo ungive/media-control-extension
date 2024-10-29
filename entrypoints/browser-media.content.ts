@@ -1,4 +1,4 @@
-import { AriaProgressElementFactory, BrowserMedia, Constants, ElementGroupObserver, EventListenerObservationStrategy, IElementSource, InputRangeProgressElementFactory, NodeMutationObservationStrategy, PlaybackPositionProgressElementObserver, ProgressElement, ProgressElementFactory, TabMediaElementSource, TabMediaObserver, TabMediaState2, TabProgressElementSource } from "@/lib/browser-media";
+import { BrowserMedia, TabMediaObserver } from "@/lib/browser-media";
 
 /**
  * Creates a hook for audio elements that are created in the future,
@@ -21,91 +21,31 @@ function hookFutureAudioElements() {
 
 let mediaObserver: TabMediaObserver | null = null;
 
-// type MediaElementObserver = ElementGroupObserver<HTMLMediaElement, EventListener>;
-
-// let mediaElementObserver: MediaElementObserver | null = null;
-// let progressElementObserver: PlaybackPositionProgressElementObserver | null = null;
-
 browser.runtime.onMessage.addListener(({ type }) => {
-  // if (!mediaElementObserver || !progressElementObserver) {
-  //   console.assert(false, "Missing observers");
-  //   return;
-  // }
   if (!mediaObserver) {
     console.debug('missed a browser runtime message:',
       BrowserMedia.ExtensionMessage[type]);
     return;
   }
   switch (type) {
-  case BrowserMedia.ExtensionMessage.SendMediaUpdates:
-    console.log('SendMediaUpdates');
-    // mediaElementObserver.restart();
-    // progressElementObserver.restart();
-    mediaObserver.start();
-    break;
-  case BrowserMedia.ExtensionMessage.CancelMediaUpdates:
-    console.log('CancelMediaUpdates');
-    // mediaElementObserver.stop();
-    // progressElementObserver.stop();
-    mediaObserver.stop();
-    break;
+    case BrowserMedia.ExtensionMessage.SendMediaUpdates:
+      mediaObserver.start();
+      break;
+    case BrowserMedia.ExtensionMessage.CancelMediaUpdates:
+      mediaObserver.stop();
+      break;
   }
 });
 
-// function onMediaUpdate(state: TabMediaState2) {
-//   console.log('UPDATE', state);
-//   // browser.runtime.sendMessage({
-//   //   type: BrowserMedia.TabMessage.MediaChanged,
-//   //   // TODO:
-//   //   // - the page url needs to be part of the state
-//   //   // - resource URLs need to be part of the state
-//   //   // => we can then call this without args
-//   //   data: null // state.toProto()
-//   // });
-// }
-
 function init() {
   hookFutureAudioElements();
+  mediaObserver = new TabMediaObserver();
+  // TODO handle media changes here, not in observer/tab-media.ts
 }
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   main() {
     init();
-
-    // mediaElementObserver = new ElementGroupObserver(
-    //   new TabMediaElementSource(),
-    //   new EventListenerObservationStrategy(
-    //     ['play', 'pause', 'timeupdate', 'durationchange']
-    //   )
-    // );
-
-    // mediaElementObserver.addEventListener((event: Event) => {
-    //   if (event.type === 'pause') {
-    //     console.log('paused.', 'maybe a different element now? (deezer)');
-    //   }
-
-    //   // TODO Send media updates...
-    //   console.log('media element changed',
-    //   );
-    // });
-
-    // progressElementObserver = new PlaybackPositionProgressElementObserver(
-    //   new TabProgressElementSource()
-    // );
-
-    // progressElementObserver.addEventListener((mutation: MutationRecord) => {
-
-    //   // TODO Send media updates...
-    //   console.log('playback position changed',
-    //     progressElementObserver?.playbackPositionProgressElement?.value,
-    //     progressElementObserver?.playbackPositionProgressElement?.min,
-    //     progressElementObserver?.playbackPositionProgressElement?.max,
-    //     progressElementObserver?.lastPlaybackPositionUpdate
-    //   );
-    // });
-
-    mediaObserver = new TabMediaObserver();
-    // mediaObserver.onMediaUpdate = onMediaUpdate;
   },
 });
