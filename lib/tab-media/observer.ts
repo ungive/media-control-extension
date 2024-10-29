@@ -413,12 +413,14 @@ export class TabMediaObserver {
   stop(): void {
     if (this.observerState == TabMediaObserverState.Idle)
       return;
+    this.observerState = TabMediaObserverState.Idle;
     this.mediaElementObserver.stop();
     this.progressElementObserver.stop();
     this.currentMediaElement = null;
     this.currentProgressElement = null;
     this.useEstimatedTrackStartTime = true;
-    this.observerState = TabMediaObserverState.Idle;
+    this.estimatedTrackStartTime = null;
+    this.previousMediaState = null;
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
