@@ -1,4 +1,3 @@
-import { isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressElement } from "./progress-element";
 
@@ -95,9 +94,7 @@ export class TabProgressElementSource
 export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
 
   get(): HTMLMediaElement[] {
-    // NOTE we are not considering playback rate here yet.
-    // NOTE we are also returning the first element that matches.
-    // ideally only one element should be playing, right?
+    // FIXME we are not considering playback rate here yet.
     const elements: HTMLMediaElement[] = [];
     for (const audio of document.querySelectorAll('audio')) {
       elements.push(audio);
@@ -105,15 +102,12 @@ export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
     for (const video of document.querySelectorAll('video')) {
       elements.push(video);
     }
+    const result = [];
     for (const media of elements) {
-      if (isMediaElementPaused(media)
-        || isNaN(media.duration) || media.duration <= 0) {
-        // Skip any media that is not playing, muted or has no duration,
-        // since we are trying to find currently playing media.
+      if (isNaN(media.duration) || media.duration <= 0)
         continue;
-      }
-      return [media];
+      result.push(media);
     }
-    return [];
+    return result;
   }
 }
