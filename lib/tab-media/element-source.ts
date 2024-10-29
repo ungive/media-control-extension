@@ -1,3 +1,4 @@
+import { isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressElement } from "./progress-element";
 
@@ -102,7 +103,9 @@ export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
     // TIDAL uses "autoplay" for animated covers, this filters them out.
     // It's probably safe to assume that music is never autoplayed like this.
     for (const video of document.querySelectorAll('video:not([autoplay])')) {
-      elements.push(video as HTMLVideoElement);
+      if (video instanceof HTMLVideoElement) {
+        elements.push(video);
+      }
     }
     for (const media of elements) {
       if (isMediaElementPaused(media) || isNaN(media.duration) || media.duration <= 0)
