@@ -380,6 +380,7 @@ export class TabMediaObserver {
   private progressElementObserver: PlaybackPositionProgressElementObserver;
   private currentMediaElement: HTMLMediaElement | null = null;
   private currentProgressElement: ProgressElement | null = null;
+  private useEstimatedTrackStartTime: boolean = true;
   private estimatedTrackStartTime: number | null = null
   private previousMediaState: TabMediaState | null = null
   // TODO set the interval to check every second for undetected changes
@@ -416,21 +417,27 @@ export class TabMediaObserver {
     this.progressElementObserver.stop();
     this.currentMediaElement = null;
     this.currentProgressElement = null;
+    this.useEstimatedTrackStartTime = true;
     this.observerState = TabMediaObserverState.Idle;
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
     this.currentMediaElement = element;
+    this.useEstimatedTrackStartTime = false;
     this.#handleUpdate();
   }
 
   #onProgressElementUpdated(element: ProgressElement) {
     this.currentProgressElement = element;
+    this.useEstimatedTrackStartTime = false;
     this.#handleUpdate();
   }
 
   #handleUpdate() {
     let state = this.#currentMediaState();
+    if (state === null) {
+      return;
+    }
     const stateChange = state.determineChanges(this.previousMediaState);
     if (stateChange === TabMediaStateChange.Nothing) {
       return;
@@ -468,7 +475,7 @@ export class TabMediaObserver {
     this.previousMediaState = state;
   }
 
-  #currentMediaState(): TabMediaState {
+  #currentMediaState(): TabMediaState | null {
     const isPlaying = navigator.mediaSession.playbackState !== "paused"
       && (navigator.mediaSession.playbackState === "playing"
         || !this.currentMediaElement
@@ -509,25 +516,17 @@ export class TabMediaObserver {
         Date.now()
       );
     }
-    else {
+    else if (this.useEstimatedTrackStartTime) {
       playbackState = this.#estimatedPlaybackPosition(isPlaying);
     }
+    else {
+      return null;
+    }
 
-    const url = new URL(window.location.href);
-    const reverseDomain = ReverseDomain.forUrl(url);
     const metadata = navigator.mediaSession.metadata;
     return new TabMediaState({
-      // url: url,
       mediaMetadata: metadata,
       playbackState: playbackState,
-      // resourceLinks: metadata
-      //   ? findBestMatchingResourceLinks(
-      //     metadata,
-      //     reverseDomain in Constants.URL_MATCHES
-      //       ? Constants.URL_MATCHES[reverseDomain]
-      //       : ({} as ResourceLinkPatterns)
-      //   )
-      //   : new Map()
     });
   }
 
