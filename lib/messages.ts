@@ -1,3 +1,5 @@
+import { BrowserMedia } from "./proto";
+
 export enum ExtensionMessage {
   SendMediaUpdates,
   CancelMediaUpdates
@@ -5,4 +7,8 @@ export enum ExtensionMessage {
 
 export enum TabMessage {
   MediaChanged
+}
+
+export interface MediaChangedPayload {
+  state: BrowserMedia.MediaState
 }

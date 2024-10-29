@@ -1,4 +1,4 @@
-import { ExtensionMessage, TabMessage } from "@/lib/messages";
+import { ExtensionMessage, MediaChangedPayload, TabMessage } from "@/lib/messages";
 import { BrowserMedia } from "@/lib/proto";
 import { TabMediaObserver } from "@/lib/tab-media/observer";
 
@@ -41,7 +41,7 @@ browser.runtime.onMessage.addListener(({ type }) => {
 function onMediaUpdated(state: BrowserMedia.MediaState) {
   browser.runtime.sendMessage({
     type: TabMessage.MediaChanged,
-    data: state,
+    data: { state } as MediaChangedPayload,
   });
 }
 

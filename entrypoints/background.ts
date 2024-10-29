@@ -1,10 +1,13 @@
-import { ExtensionMessage, TabMessage } from "@/lib/messages";
-import { Proto } from "@/lib/proto";
+import { ExtensionMessage, MediaChangedPayload, TabMessage } from "@/lib/messages";
+import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
-import { ReverseDomain } from "@/lib/util/reverse-domain";
 import { Tabs } from "wxt/browser";
 
-const tabs: Set<number> = new Set();
+type TabId = number;
+const tabs: Map<TabId, {
+  reverseDomain: string,
+  state: BrowserMedia.MediaState | null
+} | null> = new Map();
 
 function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
   const playbackState = state.playbackState ?
@@ -23,21 +26,45 @@ function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
     + "]";
 }
 
-// TODO forward to Music Presence desktop application.
-// NOTE no rate limiting here! should be done by Music Presence.
-// we don't want to add artificial delays here.
 function handleTabMedia(
   tabId: number,
-  tab: Tabs.Tab | null,
   state: Proto.BrowserMedia.MediaState | null
 ) {
+  if (!tabs.has(tabId)) {
+    return; // This tab is not registered
+  }
+  let currentState = tabs.get(tabId);
+  if (currentState === undefined) {
+    console.assert(false, "There is no previous state");
+    return;
+  }
+  if (state == null) {
+    if (currentState === null) {
+      return; // Nothing has changed
+    }
+    // Don't overwrite the reverse domain for the tab
+    currentState.state = null;
+  }
+  else {
+    if (state.source === undefined) {
+      console.assert(false, "There is no source for the media state");
+      return;
+    }
+    currentState = {
+      reverseDomain: state.source?.reverseDomain,
+      state: state
+    };
+  }
+  tabs.set(tabId, currentState);
+
+  // logging
   const ts = new Date(Date.now()).toISOString();
-  if (state && tab && tab.url) {
+  if (state) {
     const encoded = JSON.stringify(Proto.BrowserMedia.MediaUpdate.toJSON({ media: [state] }));
     console.log(ts, tabId, state.source?.reverseDomain, tabMediaStateToString(state), state, encoded);
   }
   else {
-    console.log(ts, tabId, tab ? ReverseDomain.forTab(tab) : undefined, state);
+    console.log(ts, tabId, currentState.reverseDomain, state);
   }
 }
 
@@ -46,20 +73,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     // Can't handle messages without a valid tab.
     return;
   }
-  if (!tabs.has(sender.tab.id)) {
-    // This tab is not registered.
-    return;
-  }
   switch (message.type) {
     case TabMessage.MediaChanged:
-      const state = message.data as Proto.BrowserMedia.MediaState;
-      if (state.playbackState?.playing) {
-        handleTabMedia(sender.tab?.id, sender.tab, state);
-      }
-      else {
-        handleTabMedia(sender.tab?.id, sender.tab, null);
-      }
-      return;
+      const payload = message.data as MediaChangedPayload;
+      handleTabMedia(sender.tab.id, payload.state);
+      break;
   }
 });
 
@@ -73,7 +91,7 @@ async function registerTab(tab: Tabs.Tab) {
   if (!tab.url) {
     return console.error('failed to register tab without a url');
   }
-  tabs.add(tab.id);
+  tabs.set(tab.id, null);
   browser.tabs.sendMessage(tab.id, {
     type: ExtensionMessage.SendMediaUpdates
   });
@@ -83,13 +101,13 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   if (!tabs.has(tabId)) {
     return; // Not registered.
   }
-  tabs.delete(tabId);
   if (sendCancel) {
     browser.tabs.sendMessage(tabId, {
       type: ExtensionMessage.CancelMediaUpdates
     });
   }
-  handleTabMedia(tabId, null, null);
+  handleTabMedia(tabId, null);
+  tabs.delete(tabId);
 }
 
 async function onTabAudible(tabId: number, audible: boolean, tab: Tabs.Tab) {
