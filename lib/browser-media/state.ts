@@ -119,8 +119,6 @@ export class TabMediaState2 implements ITabMediaState {
     url: URL,
     resourceLinks: Map<ResourceType, string>
   ): Proto.MediaState {
-    console.log(this.playbackState.positionTimestamp);
-    console.log(new Date(this.playbackState.positionTimestamp));
     return {
       source: {
         reverseDomain: ReverseDomain.forUrl(url),

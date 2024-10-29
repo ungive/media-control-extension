@@ -1,6 +1,6 @@
-import { PlaybackStateSource } from "./state";
-import { ResourceLinkPatterns } from "./resource-links";
 import { ProgressElementPrecision } from "./progress-element";
+import { ResourceLinkPatterns } from "./resource-links";
+import { PlaybackStateSource } from "./state";
 
 export namespace Constants {
 

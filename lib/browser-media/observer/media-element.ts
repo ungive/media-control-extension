@@ -1,6 +1,9 @@
 import { Constants } from "../constants";
 import { ProgressElement, ProgressElementPrecision } from "../progress-element";
 
+/**
+ * Represents an arbitrary source for getting elements in the DOM.
+ */
 export interface IElementSource<E> {
   get(): E[];
 }
@@ -15,7 +18,7 @@ export class ElementSourceObserver<E extends Object> {
   private intervalTimeout: NodeJS.Timeout | null = null
   private previousElements: E[] = []
 
-  constructor(private source: IElementSource<E>) {}
+  constructor(private source: IElementSource<E>) { }
 
   setListener(callback: (elements: E[]) => void) {
     this.listener = callback
@@ -57,6 +60,9 @@ export class ElementSourceObserver<E extends Object> {
   }
 }
 
+/**
+ * Represents a strategy for observing elements in the DOM.
+ */
 export interface IObservationStrategy<E, C extends CallableFunction> {
 
   addListeners(element: E, handler: C): void
@@ -67,7 +73,7 @@ export type ElementEventCallback<E> = (element: E, event: Event) => void;
 
 export class EventListenerObservationStrategy<E extends EventTarget>
   implements IObservationStrategy<E, ElementEventCallback<E>> {
-  
+
   private readonly eventNames: string[]
 
   private listeners: {
@@ -258,7 +264,7 @@ export type ElementMutationCallback<E> =
 
 export class PlaybackPositionProgressElementObserver
   implements IPausableObserver<ElementMutationCallback<ProgressElement>> {
-  
+
   private progressElementState: Map<Element, ProgressElementState> = new Map();
   private currentPlaybackPositionProgressElement: ProgressElement | null = null;
   // private lastPlaybackPositionValueUpdate: number | null = null;
@@ -284,16 +290,8 @@ export class PlaybackPositionProgressElementObserver
     this.eventCallbacks.push(callback);
   }
 
-  // get playbackPositionProgressElement(): ProgressElement | undefined {
-  //   return this.currentPlaybackPositionProgressElement ?? undefined;
-  // }
-
-  // get lastPlaybackPositionUpdate(): number | undefined {
-  //   return this.lastPlaybackPositionValueUpdate ?? undefined;
-  // }
-
   #onMutated(element: ProgressElement, mutations: MutationRecord[]) {
-    
+
     // FIXME what if the progress element is removed or replaced?
     // in that case we would rely on an invalid element the whole time.
 
@@ -316,7 +314,7 @@ export class PlaybackPositionProgressElementObserver
         console.assert(false, "mutated element is not the progress element");
         continue;
       }
-      
+
       // When the playback position progress element has already been found
       // we simply trigger a media update when an attribute changed.
       // We break the loop, since we don't need to send updates more than once
@@ -375,7 +373,6 @@ export class PlaybackPositionProgressElementObserver
       const difference = Math.abs(timeDeltaMillis - positionDelta);
       if (difference <= epsilon) {
         this.currentPlaybackPositionProgressElement = state.progressElement;
-        // this.lastPlaybackPositionValueUpdate = nowTimestamp;
         state.lastValue = null;
         state.lastValueTimestamp = null;
         continue;

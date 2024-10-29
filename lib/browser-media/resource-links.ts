@@ -55,8 +55,8 @@ function findClosestAncestor(a: Node, b: Node): Node {
   range.setStart(a, 0);
   range.setEnd(b, 0);
   if (range.collapsed) {
-      range.setStart(b, 0);
-      range.setEnd(a, 0);
+    range.setStart(b, 0);
+    range.setEnd(a, 0);
   }
   return range.commonAncestorContainer;
 }
@@ -77,7 +77,7 @@ function findDistanceFromAncestor(node: Node, ancestor: Node): number | undefine
 /**
  * Finds the node among a set of candidate nodes that is closest
  * to the common ancestor of the given node and the candidate node.
- * 
+ *
  * @param node The given node.
  * @param candidates A set of candidate nodes.
  * @returns The candidate node that is closest to the common ancestor.
@@ -119,7 +119,7 @@ function findNodeWithClosestAncestor<N1 extends Node, N2 extends Node>(
 /**
  * Finds the two nodes among two sets of nodes that are closest
  * to their common DOM ancestor.
- * 
+ *
  * @param firstSet The first set of nodes.
  * @param secondSet The second set of nodes.
  * @returns The two nodes that are closest to their common ancestor.
@@ -167,20 +167,20 @@ function findPairWithClosestAncestor<N1 extends Node, N2 extends Node>(
 /**
  * Finds all resource links under the given list of {@link roots}
  * that conform to the given set of parameters.
- * 
+ *
  * Only elements are returned whose full path name (with leading slash)
  * match the given {@link pathPattern} and whose innerText matches
  * the given {@link innerText}, either case-sensitive or -insensitive,
  * depending on the value of {@link caseInsensitive},
  * and either exactly or merely as a prefix,
  * depending on the value of {@link innerTextStartsWith}.
- * 
+ *
  * @param pathPattern The pattern to match against the pathname of any URL.
  * @param innerText The innerText that the link element should contain.
  * @param caseInsensitive Whether to match {@link innerText} case-insensitive.
  * @param innerTextStartsWith Whether to match {@link innerText} as a prefix.
  * @param roots The set of {@link RootElement} elements to search under.
- * @returns 
+ * @returns
  */
 function findResourceLinks(
   pathPattern: RegExp,
@@ -219,17 +219,17 @@ function findResourceLinks(
 
 /**
  * Finds those resource links that match best for the given {@link metadata}.
- * 
+ *
  * Links are filtered with the given {@link ResourceLinkPatterns},
  * so that only link elements are considered that have the correct url format.
- * 
+ *
  * To make sure that resource links belong together contextually,
  * links aren't individually extracted from the document, which would be naive,
  * but are compared against each other in such a way,
  * to make sure they appear in the same context,
  * e.g. on the same line, under the same container element
  * and without too much distance from one another.
- * 
+ *
  * This function works under the premise that each web player
  * contains at least *some* links to the song that is currently being played
  * and/or the artist of the song and maybe the album it appears in.
@@ -237,10 +237,10 @@ function findResourceLinks(
  * and the function works very reliably
  * without making any substantial assumptions about the layout of the page
  * that might be individual to a specific web player, but not to another.
- * 
- * @param metadata 
- * @param linkPatterns 
- * @returns 
+ *
+ * @param metadata
+ * @param linkPatterns
+ * @returns
  */
 export function findBestMatchingResourceLinks(
   metadata: ResourceInfo,
@@ -382,6 +382,5 @@ export function findBestMatchingResourceLinks(
     }
   }
 
-  // console.log([...urls.entries()].map(e => [ResourceType[e[0]], e[1]]));
   return urls;
 }
