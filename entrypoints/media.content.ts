@@ -50,6 +50,31 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
       }
       break;
     }
+    case PopupMessage.SeekStart: {
+      const mediaElement = mediaObserver.mediaElement;
+      if (mediaElement !== null) {
+        if (mediaElement.paused) {
+          mediaElement.play();
+        }
+        if (!mediaElement.paused) {
+          mediaElement.currentTime = 0;
+        }
+      }
+      break;
+    }
+    case PopupMessage.NextTrack: {
+      const mediaElement = mediaObserver.mediaElement;
+      if (mediaElement !== null) {
+        if (mediaElement.paused) {
+          mediaElement.play();
+        }
+        if (!mediaElement.paused) {
+          // Add a few seconds so it doesn't play the last few seconds.
+          mediaElement.currentTime = mediaElement.duration + 2;
+        }
+      }
+      break;
+    }
   }
 });
 

@@ -13,7 +13,9 @@ export enum TabMessage {
 export enum PopupMessage {
   GetCurrentMedia = 200,
   PauseMedia,
-  PlayMedia
+  PlayMedia,
+  SeekStart,
+  NextTrack
 }
 
 export interface RuntimeMessage {
