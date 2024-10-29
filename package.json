@@ -17,6 +17,7 @@
     "protoc:windows": "proto.bat"
   },
   "dependencies": {
+    "@heroicons/vue": "^2.1.5",
     "deep-equal": "^2.2.3",
     "vue": "^3.5.12"
   },
