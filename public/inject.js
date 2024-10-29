@@ -7,7 +7,6 @@
   ['play', 'pause'].forEach(method => {
     const original = Audio.prototype[method];
     Audio.prototype[method] = function () {
-      console.log(method);
       const value = original.apply(this, arguments);
       if (!document.contains(this)) {
         document.body.append(this);
