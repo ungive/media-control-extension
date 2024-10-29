@@ -2,25 +2,6 @@ import { ExtensionMessage, MediaChangedPayload, PopupMessage, RuntimeMessage, Ta
 import { BrowserMedia } from "@/lib/proto";
 import { TabMediaObserver } from "@/lib/tab-media/observer";
 
-/**
- * Creates a hook for audio elements that are created in the future,
- * by adding them to the DOM, so they can be retrieved with query selectors,
- * since audio elements can play media in a user-friendly way without being
- * added to the DOM [citation needed].
- */
-function hookFutureAudioElements() {
-  ['play', 'pause'].forEach(method => {
-    const original = Audio.prototype[method];
-    Audio.prototype[method] = function () {
-      const value = original.apply(this, arguments);
-      if (!document.contains(this)) {
-        document.body.append(this);
-      }
-      return value;
-    };
-  });
-}
-
 let mediaObserver: TabMediaObserver | null = null;
 let lastInteractedMediaElement: HTMLMediaElement | null = null;
 
@@ -72,8 +53,14 @@ function onMediaUpdated(state: BrowserMedia.MediaState) {
   } as RuntimeMessage);
 }
 
+function injectAudioHook() {
+  const script = document.createElement('script');
+  script.src = browser.runtime.getURL('/inject.js');
+  document.head.appendChild(script);
+}
+
 function init() {
-  hookFutureAudioElements();
+  injectAudioHook();
   mediaObserver = new TabMediaObserver();
   mediaObserver.addEventListener(onMediaUpdated);
 }
