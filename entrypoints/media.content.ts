@@ -1,4 +1,4 @@
-import { ExtensionMessage, MediaChangedPayload, TabMessage } from "@/lib/messages";
+import { ExtensionMessage, MediaChangedPayload, RuntimeMessage, TabMessage } from "@/lib/messages";
 import { BrowserMedia } from "@/lib/proto";
 import { TabMediaObserver } from "@/lib/tab-media/observer";
 
@@ -23,12 +23,12 @@ function hookFutureAudioElements() {
 
 let mediaObserver: TabMediaObserver | null = null;
 
-browser.runtime.onMessage.addListener(({ type }) => {
+browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (!mediaObserver) {
     console.assert(false, 'Media observer not initialized');
     return;
   }
-  switch (type) {
+  switch (message.type) {
     case ExtensionMessage.SendMediaUpdates:
       mediaObserver.restart();
       break;
@@ -41,8 +41,8 @@ browser.runtime.onMessage.addListener(({ type }) => {
 function onMediaUpdated(state: BrowserMedia.MediaState) {
   browser.runtime.sendMessage({
     type: TabMessage.MediaChanged,
-    data: { state } as MediaChangedPayload,
-  });
+    payload: { state } as MediaChangedPayload,
+  } as RuntimeMessage);
 }
 
 function init() {

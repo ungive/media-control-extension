@@ -1,63 +1,38 @@
 <script lang="ts" setup>
-import { TabMessage } from '@/lib/messages';
-import { Proto } from '@/lib/proto';
+import { CurrentMediaElementPayload, CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { ref } from 'vue';
-interface MediaInfo {
-  tabId: number | null
-  title: string
-  artist: string | undefined
-  album: string | undefined
-  position: number | undefined
-  duration: number | undefined
-  playing: boolean
-}
-const items = ref<MediaInfo[]>([
-  {
-    tabId: null,
-    title: "Example",
-    artist: "Artist",
-    album: "Album",
-    position: 0,
-    duration: 100,
-    playing: false,
-  }
-]);
-browser.runtime.onMessage.addListener(async (message, sender) => {
-  if (!sender.tab?.id) {
-    // Can't handle messages without a valid tab.
-    return;
-  }
+
+const items = ref<CurrentMediaElementPayload[]>([]);
+
+browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) => {
   switch (message.type) {
-    case TabMessage.MediaChanged:
-      const state = message.data as Proto.BrowserMedia.MediaState;
-      items.value = [
-        {
-          tabId: sender.tab.id,
-          title: state.metadata?.title || '?',
-          artist: state.metadata?.artist,
-          album: state.metadata?.album,
-          position: state.playbackState?.position,
-          duration: state.metadata?.duration,
-          playing: state.playbackState?.playing || false
-        }
-      ];
+    case ExtensionMessage.CurrentMedia:
+      const currentMediaPayload = message.payload as CurrentMediaPayload;
+      items.value = currentMediaPayload.media;
       return;
   }
 });
-function showTab(tabId: number) {
-  console.log('show', tabId)
-  browser.tabs.update(tabId, {
-    active: true
-  })
+
+browser.runtime.sendMessage({
+  type: PopupMessage.GetCurrentMedia
+} as RuntimeMessage);
+
+function showTab(tabId: number, closePopup: boolean = false) {
+  browser.tabs.update(tabId, { active: true });
+  if (closePopup) {
+    window.close();
+  }
 }
 </script>
 
 <template>
   <ul>
     <li v-for="item in items">
-      {{ item.title }} by {{ item.artist || '?' }} on {{ item.album || '?' }},
-      {{ item.position || '?' }}/{{ item.duration || '?' }}
-      <a v-on:click="showTab(item.tabId)">Open tab</a>
+      {{ item.state.metadata?.title }}
+      by {{ item.state.metadata?.artist || '?' }}
+      on {{ item.state.metadata?.album || '?' }},
+      {{ item.state.playbackState?.position || '?' }}/{{ item.state.metadata?.duration || '?' }}
+      <a v-on:click="showTab(item.tabId, true)">Open tab</a>
     </li>
   </ul>
 </template>
