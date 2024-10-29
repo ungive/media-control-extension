@@ -121,12 +121,14 @@ export class TabMediaState implements ITabMediaState {
    */
   serialize(
     url: URL,
+    faviconUrl: URL | null,
     resourceLinks: Map<ResourceType, string>
   ): BrowserMedia.MediaState {
     return {
       source: {
         reverseDomain: ReverseDomain.forUrl(url),
-        url: url.href
+        siteUrl: url.href,
+        faviconUrl: faviconUrl?.href
       },
       metadata: this.mediaMetadata ? {
         title: this.mediaMetadata.title,
@@ -146,6 +148,8 @@ export class TabMediaState implements ITabMediaState {
       },
       images: this.mediaMetadata?.artwork.map((a): BrowserMedia.MediaState_Image => {
         const sizes = a.sizes?.split('x');
+        // TODO extract raw data from src if it's a data URL? or simply ignore
+        // this case and handle it somewhere else when the need arises?
         return {
           url: a.src,
           mimeType: a.type ?? undefined,
@@ -155,16 +159,4 @@ export class TabMediaState implements ITabMediaState {
       }) ?? []
     };
   }
-}
-
-/**
- * Checks whether a media element is considered paused.
- *
- * @param element The media element.
- * @returns Whether the media element is considered paused.
- */
-export function isMediaElementPaused(element: HTMLMediaElement): boolean {
-  // Muted media is considered paused for now,
-  // as the background script detects playing media through "audible" tabs.
-  return element.paused || element.muted;
 }

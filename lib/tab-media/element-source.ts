@@ -1,6 +1,6 @@
+import { isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressElement } from "./progress-element";
-import { isMediaElementPaused } from "./state";
 
 /**
  * Represents an arbitrary source for getting elements in the DOM.

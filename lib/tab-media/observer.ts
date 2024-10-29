@@ -1,10 +1,11 @@
 import { ReverseDomain } from "@/lib/util/reverse-domain";
 import { BrowserMedia } from "../proto";
+import { getFaviconUrl, isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { ElementSourceObserver, IElementSource, TabMediaElementSource, TabProgressElementSource } from "./element-source";
 import { ProgressElement, ProgressElementPrecision } from "./progress-element";
 import { findBestMatchingResourceLinks, ResourceLinkPatterns } from "./resource-links";
-import { isMediaElementPaused, PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
+import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
 
 /**
  * Represents a strategy for observing elements in the DOM.
@@ -472,6 +473,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     const reverseDomain = ReverseDomain.forUrl(url);
     const serialized = state.serialize(
       url,
+      getFaviconUrl(),
       state.mediaMetadata
         ? findBestMatchingResourceLinks(
           state.mediaMetadata,
