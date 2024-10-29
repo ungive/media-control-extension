@@ -437,6 +437,13 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     this.eventCallbacks.push(callback);
   }
 
+  /**
+   * The current media element that is playing media, if there is any.
+   */
+  get mediaElement(): HTMLMediaElement | null {
+    return this.currentMediaElement
+  }
+
   #onMediaElementUpdated(element: HTMLMediaElement) {
     this.currentMediaElement = element;
     this.useEstimatedTrackStartTime = false;

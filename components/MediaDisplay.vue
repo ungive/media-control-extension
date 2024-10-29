@@ -67,11 +67,15 @@ function getHomepage(url: string): string {
 }
 
 function pauseMedia(tabId: number) {
-
+  browser.tabs.sendMessage(tabId, {
+    type: PopupMessage.PauseMedia
+  } as RuntimeMessage);
 }
 
-function resumeMedia(tabId: number) {
-
+function playMedia(tabId: number) {
+  browser.tabs.sendMessage(tabId, {
+    type: PopupMessage.PlayMedia
+  } as RuntimeMessage);
 }
 </script>
 
@@ -130,11 +134,12 @@ function resumeMedia(tabId: number) {
               </div>
               <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
                 <div class="flex-shrink-0 -ms-0.5">
-                  <a v-if="item.state.playbackState?.playing" title="Pause"
+                  <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
                     class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
                     <PauseIcon class="size-4 mt-1"></PauseIcon>
                   </a>
-                  <a v-else title="Play" class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                  <a v-else @click="playMedia(item.tabId)" title="Play"
+                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
                     <PlayIcon class="size-4 mt-1"></PlayIcon>
                   </a>
                 </div>
