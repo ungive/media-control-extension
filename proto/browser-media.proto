@@ -43,7 +43,9 @@ message MediaState {
     // as it makes the reverse domain name only more ambiguous.
     string reverse_domain = 1 [ json_name = "reverse_domain" ];
     // The exact URL of the page that is playing the media.
-    string url = 2 [ json_name = "url" ];
+    string site_url = 2 [ json_name = "site_url" ];
+    // The URL to the favicon of the web page.
+    optional string favicon_url = 3 [ json_name = "favicon_url" ];
   }
 
   message Metadata {

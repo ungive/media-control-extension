@@ -103,7 +103,9 @@ export interface MediaState_Source {
    */
   reverseDomain: string;
   /** The exact URL of the page that is playing the media. */
-  url: string;
+  siteUrl: string;
+  /** The URL to the favicon of the web page. */
+  faviconUrl?: string | undefined;
 }
 
 export interface MediaState_Metadata {
@@ -270,14 +272,15 @@ export const MediaState = {
 };
 
 function createBaseMediaState_Source(): MediaState_Source {
-  return { reverseDomain: "", url: "" };
+  return { reverseDomain: "", siteUrl: "", faviconUrl: undefined };
 }
 
 export const MediaState_Source = {
   fromJSON(object: any): MediaState_Source {
     return {
       reverseDomain: isSet(object.reverse_domain) ? globalThis.String(object.reverse_domain) : "",
-      url: isSet(object.url) ? globalThis.String(object.url) : "",
+      siteUrl: isSet(object.site_url) ? globalThis.String(object.site_url) : "",
+      faviconUrl: isSet(object.favicon_url) ? globalThis.String(object.favicon_url) : undefined,
     };
   },
 
@@ -286,8 +289,11 @@ export const MediaState_Source = {
     if (message.reverseDomain !== "") {
       obj.reverse_domain = message.reverseDomain;
     }
-    if (message.url !== "") {
-      obj.url = message.url;
+    if (message.siteUrl !== "") {
+      obj.site_url = message.siteUrl;
+    }
+    if (message.faviconUrl !== undefined) {
+      obj.favicon_url = message.faviconUrl;
     }
     return obj;
   },
@@ -298,7 +304,8 @@ export const MediaState_Source = {
   fromPartial<I extends Exact<DeepPartial<MediaState_Source>, I>>(object: I): MediaState_Source {
     const message = createBaseMediaState_Source();
     message.reverseDomain = object.reverseDomain ?? "";
-    message.url = object.url ?? "";
+    message.siteUrl = object.siteUrl ?? "";
+    message.faviconUrl = object.faviconUrl ?? undefined;
     return message;
   },
 };
