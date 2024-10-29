@@ -59,7 +59,7 @@ onBeforeUnmount(() => clearCurrentInterval());
 </script>
 
 <template>
-  <div class="flex flex-row min-w-64">
+  <div class="flex flex-row w-full">
     <div>{{ livePositionDisplay }}</div>
     <template v-if="props.duration">
       <div class="w-full bg-gray-200 rounded-full h-1 mt-2.5 mb-1 mx-2 dark:bg-gray-700">

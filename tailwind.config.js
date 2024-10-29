@@ -8,6 +8,9 @@ export default {
       },
       height: {
         '22': '5.5rem'
+      },
+      minWidth: {
+        '120': '30rem'
       }
     },
   },
