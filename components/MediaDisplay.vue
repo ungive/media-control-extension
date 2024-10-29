@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { CurrentMediaElementPayload, CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { ShareIcon } from '@heroicons/vue/16/solid';
+import { PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 
@@ -25,6 +25,10 @@ function showTab(tabId: number, closePopup: boolean = false) {
   if (closePopup) {
     window.close();
   }
+}
+
+async function closeTab(tabId: number) {
+  await browser.tabs.remove(tabId);
 }
 
 function convertRemToPixels(rem: number) {
@@ -57,6 +61,18 @@ function getHostname(url: string): string {
   const hostname = new URL(url).hostname;
   return hostname.replace(/^(www\.)/, "");
 }
+
+function getHomepage(url: string): string {
+  return new URL(url).origin;
+}
+
+function pauseMedia(tabId: number) {
+
+}
+
+function resumeMedia(tabId: number) {
+
+}
 </script>
 
 <template>
@@ -66,32 +82,43 @@ function getHostname(url: string): string {
         Media Control
       </h4>
     </div>
-    <div class="flow-root min-w-120">
+    <div class="flow-root min-w-120 max-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <li class="py-3 sm:py-4" v-for="item in items">
+        <li class="py-3 sm:py-4 group" v-for="item in items">
           <div class="flex items-center" v-if="item.state.metadata">
             <div class="flex-shrink-0">
-              <img class="w-28 h-28 rounded-md cursor-pointer object-cover object-center shadow shadow-black"
+              <img class="w-28 h-28 rounded-md cursor-pointer object-cover object-center shadow-sm shadow-zinc-950"
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
             <div class="flex-1 min-w-0 ms-4 text-sm">
-              <div class="font-medium text-gray-900 truncate dark:text-white">
-                <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
-                  class="no-underline hover:underline hover:underline-offset-2 hover:decoration-gray-200">{{
-                    item.state.metadata.title }}</a>
+              <div class="flex items-center cursor-default" v-if="item.state.source">
+                <div class="flex-1 truncate">
+                  <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
+                    class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-200 transition-colors duration-150 leading-6 no-underline">{{
+                      item.state.metadata.title }}</a>
+                </div>
+                <div class="flex-shrink-0 ms-12">
+                  <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
+                    class="text-gray-400 hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
+                    <XMarkIcon class="size-4 mt-1"></XMarkIcon>
+                  </a>
+                </div>
               </div>
-              <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.artist">
+              <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
                 by
                 <a v-if="item.state.resourceLinks?.artistUrl" :href="item.state.resourceLinks?.artistUrl"
-                  target="_blank" class="decoration-gray-600 underline-offset-2" :title="item.state.metadata.artist">{{
+                  target="_blank"
+                  class="border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6 no-underline"
+                  :title="item.state.metadata.artist">{{
                     item.state.metadata.artist }}</a>
                 <span v-else>{{ item.state.metadata.artist }}</span>
               </div>
-              <div class="text-gray-500 truncate dark:text-gray-400" v-if="item.state.metadata?.album">
+              <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
                 on
                 <a v-if="item.state.resourceLinks?.albumUrl" :href="item.state.resourceLinks?.albumUrl" target="_blank"
-                  class="decoration-gray-600 underline-offset-2" :title="item.state.metadata.album">{{
+                  class="border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6 no-underline"
+                  :title="item.state.metadata.album">{{
                     item.state.metadata.album }}</a>
                 <span v-else>{{ item.state.metadata.album }}</span>
               </div>
@@ -102,18 +129,32 @@ function getHostname(url: string): string {
                   :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
               </div>
               <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
-                <div class="flex-shrink-0" v-if="item.state.source?.faviconUrl">
-                  <img class="w-4 h-4 mt-1 rounded-md object-cover object-center grayscale"
-                    :src="item.state.source?.faviconUrl" alt="Favicon">
+                <div class="flex-shrink-0 -ms-0.5">
+                  <a v-if="item.state.playbackState?.playing" title="Pause"
+                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                    <PauseIcon class="size-4 mt-1"></PauseIcon>
+                  </a>
+                  <a v-else title="Play" class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                    <PlayIcon class="size-4 mt-1"></PlayIcon>
+                  </a>
                 </div>
-                <div class="flex-1 min-w-0 ms-2 text-gray-500" v-if="item.state.source?.siteUrl">
-                  <a class="no-underline hover:underline hover:underline-offset-2" @click="showTab(item.tabId)">{{
-                    getHostname(item.state.source.siteUrl) }}</a>
+                <div class="flex-1 min-w-0 ms-2" v-if="item.state.source?.siteUrl">
+                  <a class="no-underline text-gray-500 hover:text-gray-400 transition-colors duration-200"
+                    @click="showTab(item.tabId)">{{
+                      getHostname(item.state.source.siteUrl) }}</a>
                 </div>
-                <div class="flex-shrink-0 ms-2" v-if="item.state.resourceLinks?.trackUrl">
-                  <a :href="item.state.resourceLinks?.trackUrl" target="_blank"
-                    class="text-gray-400 hover:text-gray-300">
+                <div class="flex-shrink-0"
+                  v-if="item.state.resourceLinks?.trackUrl || item.state.resourceLinks?.albumUrl">
+                  <a :href="item.state.resourceLinks?.trackUrl || item.state.resourceLinks?.albumUrl" target="_blank"
+                    title="Share" class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
                     <ShareIcon class="size-4 mt-1"></ShareIcon>
+                  </a>
+                </div>
+                <div class="flex-shrink-0 ms-3 me-0" v-if="item.state.source?.faviconUrl">
+                  <a :href="getHomepage(item.state.source.siteUrl)" :title="getHostname(item.state.source.siteUrl)"
+                    target="_blank">
+                    <img class="w-4 h-4 mt-1 rounded-md object-cover object-center grayscale"
+                      :src="item.state.source?.faviconUrl" alt="Favicon">
                   </a>
                 </div>
               </div>
