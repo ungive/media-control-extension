@@ -1,5 +1,5 @@
-import { TabMessage } from "@/lib/messages";
 import { ReverseDomain } from "@/lib/util/reverse-domain";
+import { BrowserMedia } from "../proto";
 import { Constants } from "./constants";
 import { ElementSourceObserver, IElementSource, TabMediaElementSource, TabProgressElementSource } from "./element-source";
 import { ProgressElement, ProgressElementPrecision } from "./progress-element";
@@ -100,7 +100,7 @@ export class NodeMutationObservationStrategy<E>
   }
 }
 
-export interface IPausableObserver<C extends CallableFunction> {
+export interface IObserver<C extends CallableFunction> {
   start(): boolean
   stop(): boolean
   restart(): boolean
@@ -113,7 +113,7 @@ export interface IPausableObserver<C extends CallableFunction> {
  * that the source might supply a different element at another point in time.
  */
 export class ElementGroupObserver<E extends Object, C extends CallableFunction>
-  implements IPausableObserver<C> {
+  implements IObserver<C> {
 
   private readonly elementSource: IElementSource<E>
   private readonly elementSourceObserver: ElementSourceObserver<E>
@@ -209,7 +209,7 @@ export type ElementMutationCallback<E> =
   (element: E, mutation: MutationRecord) => void;
 
 export class PlaybackPositionProgressElementObserver
-  implements IPausableObserver<ElementMutationCallback<ProgressElement>> {
+  implements IObserver<ElementMutationCallback<ProgressElement>> {
 
   private progressElementState: Map<Element, ProgressElementState> = new Map();
   private currentPlaybackPositionProgressElement: ProgressElement | null = null;
@@ -372,7 +372,9 @@ enum TabMediaObserverState {
 
 export type MediaElementObserver = ElementGroupObserver<HTMLMediaElement, ElementEventCallback<HTMLMediaElement>>;
 
-export class TabMediaObserver {
+export type TabMediaStateCallback = (state: BrowserMedia.MediaState) => void
+
+export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
   private observerState: TabMediaObserverState = TabMediaObserverState.Idle
 
@@ -385,6 +387,8 @@ export class TabMediaObserver {
   private previousMediaState: TabMediaState | null = null
   // TODO set the interval to check every second for undetected changes
   private updateInterval: NodeJS.Timeout | null = null
+
+  private eventCallbacks: (TabMediaStateCallback)[] = []
 
   constructor() {
     this.mediaElementObserver = new ElementGroupObserver(
@@ -400,19 +404,18 @@ export class TabMediaObserver {
     this.progressElementObserver.addEventListener(this.#onProgressElementUpdated.bind(this))
   }
 
-  // onMediaUpdate: (state: TabMediaState2) => void = () => {}
-
-  start(): void {
+  start(): boolean {
     if (this.observerState == TabMediaObserverState.Observing)
-      return;
+      return true;
     this.observerState = TabMediaObserverState.Observing;
     this.mediaElementObserver.restart();
     this.progressElementObserver.restart();
+    return true;
   }
 
-  stop(): void {
+  stop(): boolean {
     if (this.observerState == TabMediaObserverState.Idle)
-      return;
+      return false;
     this.observerState = TabMediaObserverState.Idle;
     this.mediaElementObserver.stop();
     this.progressElementObserver.stop();
@@ -421,6 +424,16 @@ export class TabMediaObserver {
     this.useEstimatedTrackStartTime = true;
     this.estimatedTrackStartTime = null;
     this.previousMediaState = null;
+    return true;
+  }
+
+  restart(): boolean {
+    this.stop();
+    return this.start();
+  }
+
+  addEventListener(callback: TabMediaStateCallback): void {
+    this.eventCallbacks.push(callback);
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
@@ -457,20 +470,20 @@ export class TabMediaObserver {
     }
     const url = new URL(window.location.href);
     const reverseDomain = ReverseDomain.forUrl(url);
-    browser.runtime.sendMessage({
-      type: TabMessage.MediaChanged,
-      data: state.serialize(
-        url,
-        state.mediaMetadata
-          ? findBestMatchingResourceLinks(
-            state.mediaMetadata,
-            reverseDomain in Constants.URL_MATCHES
-              ? Constants.URL_MATCHES[reverseDomain]
-              : ({} as ResourceLinkPatterns)
-          )
-          : new Map()
-      ),
-    });
+    const serialized = state.serialize(
+      url,
+      state.mediaMetadata
+        ? findBestMatchingResourceLinks(
+          state.mediaMetadata,
+          reverseDomain in Constants.URL_MATCHES
+            ? Constants.URL_MATCHES[reverseDomain]
+            : ({} as ResourceLinkPatterns)
+        )
+        : new Map()
+    );
+    for (const callback of this.eventCallbacks) {
+      callback(serialized);
+    }
     this.previousMediaState = state;
   }
 
