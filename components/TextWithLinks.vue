@@ -24,19 +24,20 @@ function extractComponents(
   if (links === undefined) {
     return [{ text, href: null }];
   }
+  const upperText = text.toUpperCase();
   const components = new Map<number, TextComponent>();
   const takenIndices = new Set<number>();
   const entries = Object.entries(links);
   entries.sort((a, b) => b[0].length - a[0].length);
   for (const [key, value] of entries) {
     for (let pos = 0; ;) {
-      // TODO does this need to be case-insensitive?
-      const index = text.indexOf(key, pos);
+      const upperKey = key.toUpperCase();
+      const index = upperText.indexOf(upperKey, pos);
       if (index < 0) break;
-      pos = index + key.length;
+      pos = index + upperKey.length;
       if (!takenIndices.has(index)) {
         components.set(index, {
-          text: key,
+          text: text.substring(index, pos), // FIXME
           href: value
         });
         for (let i = index; i < pos; i++) {
