@@ -4,7 +4,13 @@ import { defineConfig } from 'wxt';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   manifest: {
-    permissions: ['tabs']
+    permissions: ['tabs'],
+    web_accessible_resources: [
+      {
+        resources: ['inject.js'],
+        matches: ['*://*/*']
+      }
+    ]
   },
   imports: {
     addons: {
