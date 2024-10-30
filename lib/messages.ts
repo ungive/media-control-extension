@@ -25,11 +25,13 @@ export interface RuntimeMessage {
 
 export interface MediaChangedPayload {
   state: BrowserMedia.MediaState
+  hasControls: boolean
 }
 
 export interface CurrentMediaElementPayload {
   tabId: number
   state: BrowserMedia.MediaState
+  hasControls: boolean
 }
 
 export interface CurrentMediaPayload {
