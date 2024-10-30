@@ -10,6 +10,8 @@ const tabs: Map<TabId, {
   hasControls: boolean
 } | null> = new Map();
 
+let connectedPopups = 0;
+
 function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
   const playbackState = state.playbackState ?
     new PlaybackState(
@@ -28,6 +30,9 @@ function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
 }
 
 async function sendTabMedia() {
+  if (connectedPopups === 0) {
+    return; // No popups opened
+  }
   const currentMediaPayload: CurrentMediaPayload = { media: [] }
   for (const [tabId, media] of tabs) {
     if (media?.state) {
@@ -77,10 +82,8 @@ async function handleTabMedia(
   }
   tabs.set(tabId, currentState);
 
-  // Inform open popup views about current media, if there are any.
-  if (browser.extension.getViews({ type: 'popup' }).length > 0) {
-    sendTabMedia();
-  }
+  // Inform open popup views about current media.
+  sendTabMedia();
 
   // logging
   const ts = new Date(Date.now()).toISOString();
@@ -179,6 +182,18 @@ async function init() {
     }
   }
   // console.log(BrowserType[Util.getCurrentBrowser()]);
+
+  // Observe and listen for popups that connect/disconnect i.e. open/close.
+  browser.runtime.onConnect.addListener(port => {
+    connectedPopups += 1;
+    port.onDisconnect.addListener(() => {
+      const newValue = connectedPopups - 1;
+      if (newValue < 0) {
+        console.assert(false, "Number of connected popups cannot be negative");
+      }
+      connectedPopups = Math.max(0, newValue);
+    })
+  });
 }
 
 export default defineBackground({

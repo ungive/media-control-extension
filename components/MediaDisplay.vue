@@ -2,7 +2,7 @@
 import { CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
@@ -13,23 +13,28 @@ const items = ref<{
   hasControls: boolean
 }[]>([]);
 
-browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
-  switch (message.type) {
-    case ExtensionMessage.CurrentMedia:
-      const currentMediaPayload = message.payload as CurrentMediaPayload;
-      items.value = currentMediaPayload.media.map(m => ({
-        tabId: m.tabId,
-        state: BrowserMedia.MediaState.fromJSON(m.stateJson),
-        hasControls: m.hasControls
-      }));
-      return;
-  }
-});
+onMounted(() => {
+  browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
+    switch (message.type) {
+      case ExtensionMessage.CurrentMedia:
+        const currentMediaPayload = message.payload as CurrentMediaPayload;
+        items.value = currentMediaPayload.media.map(m => ({
+          tabId: m.tabId,
+          state: BrowserMedia.MediaState.fromJSON(m.stateJson),
+          hasControls: m.hasControls
+        }));
+        return;
+    }
+  });
 
-// Request current media from the background script.
-browser.runtime.sendMessage({
-  type: PopupMessage.GetCurrentMedia
-} as RuntimeMessage);
+  // Connect to the background script for the time the popup is opened.
+  browser.runtime.connect();
+
+  // Request current media from the background script.
+  browser.runtime.sendMessage({
+    type: PopupMessage.GetCurrentMedia
+  } as RuntimeMessage);
+});
 
 function showTab(tabId: number, closePopup: boolean = true) {
   browser.tabs.update(tabId, { active: true });
