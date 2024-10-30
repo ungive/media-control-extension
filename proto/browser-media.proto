@@ -81,9 +81,9 @@ message MediaState {
   }
 
   message ResourceLinks {
-    optional string track_url = 1 [ json_name = "track_url" ];
-    optional string album_url = 2 [ json_name = "album_url" ];
-    optional string artist_url = 3 [ json_name = "artist_url" ];
+    map<string, string> track_url = 1 [ json_name = "track_url" ];
+    map<string, string> album_url = 2 [ json_name = "album_url" ];
+    map<string, string> artist_url = 3 [ json_name = "artist_url" ];
   }
 
   Source source = 1 [ json_name = "source" ];

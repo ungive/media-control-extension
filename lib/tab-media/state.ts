@@ -122,7 +122,7 @@ export class TabMediaState implements ITabMediaState {
   serialize(
     url: URL,
     faviconUrl: URL | null,
-    resourceLinks: Map<ResourceType, string>
+    resourceLinks: Map<ResourceType, Map<string, string>>
   ): BrowserMedia.MediaState {
     return {
       source: {
@@ -142,9 +142,15 @@ export class TabMediaState implements ITabMediaState {
         playing: this.playbackState.playing
       },
       resourceLinks: {
-        trackUrl: resourceLinks.get(ResourceType.Track) ?? undefined,
-        albumUrl: resourceLinks.get(ResourceType.Album) ?? undefined,
-        artistUrl: resourceLinks.get(ResourceType.Artist) ?? undefined
+        trackUrl: resourceLinks.has(ResourceType.Track)
+          ? Object.fromEntries(resourceLinks.get(ResourceType.Track)!.entries())
+          : {},
+        albumUrl: resourceLinks.has(ResourceType.Album)
+          ? Object.fromEntries(resourceLinks.get(ResourceType.Album)!.entries())
+          : {},
+        artistUrl: resourceLinks.has(ResourceType.Artist)
+          ? Object.fromEntries(resourceLinks.get(ResourceType.Artist)!.entries())
+          : {},
       },
       images: this.mediaMetadata?.artwork.map((a): BrowserMedia.MediaState_Image => {
         const sizes = a.sizes?.split('x');
