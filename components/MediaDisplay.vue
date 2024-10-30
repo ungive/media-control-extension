@@ -20,7 +20,7 @@ browser.runtime.sendMessage({
   type: PopupMessage.GetCurrentMedia
 } as RuntimeMessage);
 
-function showTab(tabId: number, closePopup: boolean = false) {
+function showTab(tabId: number, closePopup: boolean = true) {
   browser.tabs.update(tabId, { active: true });
   if (closePopup) {
     window.close();
