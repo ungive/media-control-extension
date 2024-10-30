@@ -145,32 +145,34 @@ function seekStart(tabId: number) {
                   :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
               </div>
               <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
-                <div class="flex-shrink-0 -ms-0.5">
-                  <a @click="seekStart(item.tabId)" title="Replay this track"
-                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
-                    <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
-                  </a>
-                </div>
-                <div class="flex-shrink-0 ms-2">
-                  <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
-                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
-                    <PauseIcon class="size-4 mt-1"></PauseIcon>
-                  </a>
-                  <a v-else @click="playMedia(item.tabId)" title="Play"
-                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
-                    <PlayIcon class="size-4 mt-1"></PlayIcon>
-                  </a>
-                </div>
-                <div class="flex-shrink-0 ms-2">
-                  <a @click="nextTrack(item.tabId)" title="Next track"
-                    class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
-                    <ForwardIcon class="size-4 mt-1"></ForwardIcon>
-                  </a>
+                <div class="flex-shrink-0 flex"
+                  :class="[item.hasControls ? '' : 'opacity-40 cursor-default pointer-events-none']">
+                  <div class="flex-shrink-0 -ms-0.5">
+                    <a @click="seekStart(item.tabId)" title="Replay this track"
+                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
+                    </a>
+                  </div>
+                  <div class="flex-shrink-0 ms-2">
+                    <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
+                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      <PauseIcon class="size-4 mt-1"></PauseIcon>
+                    </a>
+                    <a v-else @click="playMedia(item.tabId)" title="Play"
+                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      <PlayIcon class="size-4 mt-1"></PlayIcon>
+                    </a>
+                  </div>
+                  <div class="flex-shrink-0 ms-2">
+                    <a @click="nextTrack(item.tabId)" title="Next track"
+                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      <ForwardIcon class="size-4 mt-1"></ForwardIcon>
+                    </a>
+                  </div>
                 </div>
                 <div class="flex-1 min-w-0 ms-2.5" v-if="item.state.source?.siteUrl">
                   <a class="no-underline text-gray-500 hover:text-gray-400 transition-colors duration-200"
-                    @click="showTab(item.tabId)">{{
-                      getHostname(item.state.source.siteUrl) }}</a>
+                    @click="showTab(item.tabId)">{{ getHostname(item.state.source.siteUrl) }}</a>
                 </div>
                 <div class="flex-shrink-0"
                   v-if="item.state.resourceLinks?.trackUrl || item.state.resourceLinks?.albumUrl">

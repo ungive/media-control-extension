@@ -5,8 +5,9 @@ import { Tabs } from "wxt/browser";
 
 type TabId = number;
 const tabs: Map<TabId, {
-  reverseDomain: string,
+  reverseDomain: string
   state: BrowserMedia.MediaState | null
+  hasControls: boolean
 } | null> = new Map();
 
 function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
@@ -32,7 +33,8 @@ function sendTabMedia() {
     if (media?.state) {
       currentMediaPayload.media.push({
         tabId,
-        state: media?.state
+        state: media.state,
+        hasControls: media.hasControls
       });
     }
   }
@@ -44,7 +46,8 @@ function sendTabMedia() {
 
 function handleTabMedia(
   tabId: number,
-  state: Proto.BrowserMedia.MediaState | null
+  state: Proto.BrowserMedia.MediaState | null,
+  hasControls: boolean
 ) {
   if (!tabs.has(tabId)) {
     return; // This tab is not registered
@@ -68,7 +71,8 @@ function handleTabMedia(
     }
     currentState = {
       reverseDomain: state.source?.reverseDomain,
-      state: state
+      state: state,
+      hasControls
     };
   }
   tabs.set(tabId, currentState);
@@ -95,7 +99,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) =>
     case TabMessage.MediaChanged:
       if (sender.tab?.id !== undefined) {
         const mediaChangedPayload = message.payload as MediaChangedPayload;
-        handleTabMedia(sender.tab.id, mediaChangedPayload.state);
+        handleTabMedia(sender.tab.id, mediaChangedPayload.state, mediaChangedPayload.hasControls);
       }
       break;
     // The popup requests currently playing media
@@ -130,7 +134,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
       type: ExtensionMessage.CancelMediaUpdates
     } as RuntimeMessage);
   }
-  handleTabMedia(tabId, null);
+  handleTabMedia(tabId, null, false);
   tabs.delete(tabId);
 }
 
