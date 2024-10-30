@@ -1,18 +1,26 @@
 <script lang="ts" setup>
-import { CurrentMediaElementPayload, CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
+import { CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
 
-const items = ref<CurrentMediaElementPayload[]>([]);
+const items = ref<{
+  tabId: number
+  state: BrowserMedia.MediaState
+  hasControls: boolean
+}[]>([]);
 
-browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) => {
+browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
   switch (message.type) {
     case ExtensionMessage.CurrentMedia:
       const currentMediaPayload = message.payload as CurrentMediaPayload;
-      items.value = currentMediaPayload.media;
+      items.value = currentMediaPayload.media.map(m => ({
+        tabId: m.tabId,
+        state: BrowserMedia.MediaState.fromJSON(m.stateJson),
+        hasControls: m.hasControls
+      }));
       return;
   }
 });

@@ -1,4 +1,3 @@
-import { BrowserMedia } from "./proto";
 
 export enum ExtensionMessage {
   SendMediaUpdates = 1,
@@ -24,13 +23,13 @@ export interface RuntimeMessage {
 }
 
 export interface MediaChangedPayload {
-  state: BrowserMedia.MediaState
+  stateJson: object
   hasControls: boolean
 }
 
 export interface CurrentMediaElementPayload {
   tabId: number
-  state: BrowserMedia.MediaState
+  stateJson: object
   hasControls: boolean
 }
 

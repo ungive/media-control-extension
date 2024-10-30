@@ -33,7 +33,7 @@ function sendTabMedia() {
     if (media?.state) {
       currentMediaPayload.media.push({
         tabId,
-        state: media.state,
+        stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
         hasControls: media.hasControls
       });
     }
@@ -99,7 +99,11 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) =>
     case TabMessage.MediaChanged:
       if (sender.tab?.id !== undefined) {
         const mediaChangedPayload = message.payload as MediaChangedPayload;
-        handleTabMedia(sender.tab.id, mediaChangedPayload.state, mediaChangedPayload.hasControls);
+        handleTabMedia(
+          sender.tab.id,
+          BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson),
+          mediaChangedPayload.hasControls
+        );
       }
       break;
     // The popup requests currently playing media
