@@ -27,7 +27,7 @@ function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
     + "]";
 }
 
-function sendTabMedia() {
+async function sendTabMedia() {
   const currentMediaPayload: CurrentMediaPayload = { media: [] }
   for (const [tabId, media] of tabs) {
     if (media?.state) {
@@ -38,13 +38,13 @@ function sendTabMedia() {
       });
     }
   }
-  browser.runtime.sendMessage({
+  await browser.runtime.sendMessage({
     type: ExtensionMessage.CurrentMedia,
     payload: currentMediaPayload
   } as RuntimeMessage);
 }
 
-function handleTabMedia(
+async function handleTabMedia(
   tabId: number,
   state: Proto.BrowserMedia.MediaState | null,
   hasControls: boolean
