@@ -3,6 +3,7 @@ import { CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } f
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
+import { browser } from 'wxt/browser';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
 
