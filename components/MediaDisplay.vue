@@ -127,7 +127,7 @@ function seekStart(tabId: number) {
 <template>
   <div class="w-full max-w-lg py-2 px-4">
     <div class="flex items-center justify-between my-2">
-      <h4 class="text-md font-bold leading-none text-gray-900 dark:text-gray-200">
+      <h4 class="text-base font-bold leading-none text-gray-900 dark:text-gray-200">
         Media Control
       </h4>
     </div>
