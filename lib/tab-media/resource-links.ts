@@ -120,17 +120,18 @@ function findNodeWithClosestAncestor<N1 extends Node, N2 extends Node>(
  * Finds the two nodes among two sets of nodes that are closest
  * to their common DOM ancestor.
  *
- * @param firstSet The first set of nodes.
- * @param secondSet The second set of nodes.
+ * @param largestSet The first set of nodes with the most elements.
+ * @param smallestSet The second set of nodes with the least elements.
  * @returns The two nodes that are closest to their common ancestor.
  */
-function findPairWithClosestAncestor<N1 extends Node, N2 extends Node>(
-  firstSet: N1[],
-  secondSet: N2[]
-): ClosestNodeAncestor<N1, N2> | null {
-  let match: ClosestNodeAncestor<N1, N2> | null = null;
-  for (const first of firstSet) {
-    const result = findNodeWithClosestAncestor(first, secondSet);
+function findPairsWithClosestAncestor<N extends Node>(
+  largestSet: N[],
+  smallestSet: N[]
+): ClosestNodeAncestor<N, N>[] {
+  let match: ClosestNodeAncestor<N, N> | null = null;
+  let additionalEqualMatches: ClosestNodeAncestor<N, N>[] = [];
+  for (const first of largestSet) {
+    const result = findNodeWithClosestAncestor(first, smallestSet);
     if (!result) {
       continue;
     }
@@ -145,8 +146,9 @@ function findPairWithClosestAncestor<N1 extends Node, N2 extends Node>(
     const max = Math.max(d1, d2);
     if (!match
       || min < match.minDepth
-      || min === match.minDepth && max < match.maxDepth) {
-      match = {
+      || min === match.minDepth && max < match.maxDepth
+      || min === match.minDepth && max === match.maxDepth) {
+      const nextMatch: ClosestNodeAncestor<N, N> = {
         first: {
           node: first,
           depth: d1
@@ -159,9 +161,20 @@ function findPairWithClosestAncestor<N1 extends Node, N2 extends Node>(
         minDepth: min,
         maxDepth: max
       };
+      if (match === null) {
+        match = nextMatch;
+        additionalEqualMatches = [];
+      }
+      else {
+        additionalEqualMatches.push(nextMatch);
+      }
     }
   }
-  return match;
+  if (match !== null)
+    return [match, ...additionalEqualMatches];
+  console.assert(additionalEqualMatches.length === 0,
+    "There are additional matches without a primary match");
+  return [];
 }
 
 /**
@@ -178,7 +191,7 @@ function findPairWithClosestAncestor<N1 extends Node, N2 extends Node>(
  * @param pathPattern The pattern to match against the pathname of any URL.
  * @param innerText The innerText that the link element should contain.
  * @param caseInsensitive Whether to match {@link innerText} case-insensitive.
- * @param innerTextStartsWith Whether to match {@link innerText} as a prefix.
+ * @param innerTextIncludes Whether to match {@link innerText} as substring.
  * @param roots The set of {@link RootElement} elements to search under.
  * @returns
  */
@@ -186,7 +199,7 @@ function findResourceLinks(
   pathPattern: RegExp,
   innerText: string,
   caseInsensitive: boolean = false,
-  innerTextStartsWith: boolean = false,
+  innerTextIncludes: boolean = false,
   roots: RootElement[] = findRootNodes()
 ): HTMLLinkElement[] {
   innerText = innerText.trim();
@@ -200,10 +213,13 @@ function findResourceLinks(
         continue;
       }
       const text = element.innerText.trim();
+      if (text.length === 0) {
+        continue;
+      }
       let textMatches = false;
-      if (innerTextStartsWith) {
-        textMatches = innerText.startsWith(text)
-          || caseInsensitive && innerText.toUpperCase().startsWith(text.toUpperCase());
+      if (innerTextIncludes) {
+        textMatches = innerText.includes(text)
+          || caseInsensitive && innerText.toUpperCase().includes(text.toUpperCase());
       }
       else {
         textMatches = text === innerText
@@ -240,12 +256,16 @@ function findResourceLinks(
  *
  * @param metadata
  * @param linkPatterns
- * @returns
+ * @returns A map that maps a substring to a URL for each resource type.
  */
 export function findBestMatchingResourceLinks(
   metadata: ResourceInfo,
   linkPatterns: ResourceLinkPatterns
-): Map<ResourceType, string> {
+): Map<ResourceType, Map<string, string>> {
+
+  // FIXME this seems to be called *very* often between track changes.
+  // console.log('metadata', metadata);
+
   if (!linkPatterns.track && !linkPatterns.album && !linkPatterns.artist) {
     return new Map();
   }
@@ -291,7 +311,7 @@ export function findBestMatchingResourceLinks(
     // instead of matching exactly.
     linkElements.set(
       ResourceType.Artist,
-      findResourceLinks(linkPatterns.artist, metadata.artist, false, true, roots)
+      findResourceLinks(linkPatterns.artist, metadata.artist, true, true, roots)
     );
     if ((linkElements.get(ResourceType.Artist)?.length ?? 0) === 0) {
       linkElements.delete(ResourceType.Artist);
@@ -303,29 +323,29 @@ export function findBestMatchingResourceLinks(
   }
 
   const ancestorPairs: {
-    pairs: ClosestNodeAncestor<HTMLLinkElement, HTMLLinkElement>,
+    pairs: ClosestNodeAncestor<HTMLLinkElement, HTMLLinkElement>[],
     firstType: ResourceType,
     secondType: ResourceType
   }[] = []
   if (linkElements.has(ResourceType.Album) && linkElements.has(ResourceType.Artist)) {
-    const result = findPairWithClosestAncestor(
-      linkElements.get(ResourceType.Album)!,
-      linkElements.get(ResourceType.Artist)!
+    const result = findPairsWithClosestAncestor(
+      linkElements.get(ResourceType.Artist)!, // the artists set is always larger
+      linkElements.get(ResourceType.Album)!
     );
-    if (result) {
+    if (result.length > 0) {
       ancestorPairs.push({
         pairs: result,
-        firstType: ResourceType.Album,
-        secondType: ResourceType.Artist
+        firstType: ResourceType.Artist,
+        secondType: ResourceType.Album
       });
     }
   }
   if (linkElements.has(ResourceType.Album) && linkElements.has(ResourceType.Track)) {
-    const result = findPairWithClosestAncestor(
+    const result = findPairsWithClosestAncestor(
       linkElements.get(ResourceType.Album)!,
       linkElements.get(ResourceType.Track)!
     );
-    if (result) {
+    if (result.length > 0) {
       ancestorPairs.push({
         pairs: result,
         firstType: ResourceType.Album,
@@ -334,11 +354,11 @@ export function findBestMatchingResourceLinks(
     }
   }
   if (linkElements.has(ResourceType.Artist) && linkElements.has(ResourceType.Track)) {
-    const result = findPairWithClosestAncestor(
-      linkElements.get(ResourceType.Artist)!,
+    const result = findPairsWithClosestAncestor(
+      linkElements.get(ResourceType.Artist)!, // the artists set is always larger
       linkElements.get(ResourceType.Track)!
     );
-    if (result) {
+    if (result.length > 0) {
       ancestorPairs.push({
         pairs: result,
         firstType: ResourceType.Artist,
@@ -354,30 +374,75 @@ export function findBestMatchingResourceLinks(
   // and therefore most likely represent links to the desired
   // title/artist/album combination that is currently playing.
   ancestorPairs.sort((a, b) => {
-    if (a.pairs.minDepth < b.pairs.minDepth) {
+    // All of these inner pairs have the same minDepth,
+    // see findPairsWithClosestAncestor().
+    if (a.pairs[0].minDepth < b.pairs[0].minDepth) {
       return -1;
     }
-    if (a.pairs.minDepth === b.pairs.minDepth) {
-      return (a.pairs.maxDepth - a.pairs.minDepth)
-        - (b.pairs.maxDepth - b.pairs.minDepth);
+    if (a.pairs[0].minDepth === b.pairs[0].minDepth) {
+      return (a.pairs[0].maxDepth - a.pairs[0].minDepth)
+        - (b.pairs[0].maxDepth - b.pairs[0].minDepth);
     }
     return 1;
   });
 
-  const urls: Map<ResourceType, string> = new Map();
+  // Construct the map of resource links in the following way:
+  // Each resource type is mapped to a map of a text string to a URL.
+  // For titles and albums the entire text will link to a single URL,
+  // but for artists there may be multiple URLs for each individual artist.
+  const urls: Map<ResourceType, Map<string, string>> = new Map();
   for (const pair of ancestorPairs) {
-    if (!urls.has(pair.firstType)) {
-      urls.set(pair.firstType, pair.pairs.first.node.href);
-    }
-    if (!urls.has(pair.secondType)) {
-      urls.set(pair.secondType, pair.pairs.second.node.href);
+    for (const element of pair.pairs) {
+      if (!urls.has(pair.firstType)) {
+        urls.set(pair.firstType, new Map([
+          [element.first.node.innerText, element.first.node.href]
+        ]));
+      }
+      else if (!urls.get(pair.firstType)!.has(element.first.node.innerText)) {
+        urls.get(pair.firstType)!.set(
+          element.first.node.innerText,
+          element.first.node.href
+        );
+      }
+      if (!urls.has(pair.secondType)) {
+        urls.set(pair.secondType, new Map([
+          [element.second.node.innerText, element.second.node.href]
+        ]));
+      }
+      else if (!urls.get(pair.secondType)!.has(element.second.node.innerText)) {
+        urls.get(pair.secondType)!.set(
+          element.second.node.innerText,
+          element.second.node.href
+        );
+      }
     }
   }
+
+  // Apply any URLs that have been found as a fallback.
   for (const resourceType of [ResourceType.Track, ResourceType.Album, ResourceType.Artist]) {
     if (!urls.has(resourceType) && linkElements.has(resourceType)) {
-      const resourceUrls = linkElements.get(resourceType)!;
-      if (resourceUrls.length > 0) {
-        urls.set(resourceType, resourceUrls[0].href);
+      for (const resourceUrl of linkElements.get(resourceType)!) {
+        let text = '';
+        switch (resourceType) {
+          case ResourceType.Track: text = metadata.title; break;
+          case ResourceType.Album: text = metadata.album; break;
+          case ResourceType.Artist: text = metadata.artist; break;
+          default:
+            console.assert(false);
+            continue;
+        }
+        console.assert(text.length > 0);
+        const innerText = resourceUrl.innerText.trim();
+        if (!text.includes(innerText)) {
+          continue;
+        }
+        const href = resourceUrl.href;
+        if (!urls.has(resourceType)) {
+          urls.set(resourceType, new Map([[innerText, href]]));
+        }
+        else if (!urls.get(resourceType)!.has(innerText)) {
+          urls.get(resourceType)!.set(innerText, href);
+        }
       }
     }
   }

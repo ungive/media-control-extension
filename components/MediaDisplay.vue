@@ -4,6 +4,7 @@ import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
+import TextWithLinks from './TextWithLinks.vue';
 
 const items = ref<CurrentMediaElementPayload[]>([]);
 
@@ -16,6 +17,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) =>
   }
 });
 
+// Request current media from the background script.
 browser.runtime.sendMessage({
   type: PopupMessage.GetCurrentMedia
 } as RuntimeMessage);
@@ -64,6 +66,23 @@ function getHostname(url: string): string {
 
 function getHomepage(url: string): string {
   return new URL(url).origin;
+}
+
+function getShareLink(
+  resourceLinks: BrowserMedia.MediaState_ResourceLinks | undefined
+): string | null {
+  if (resourceLinks === undefined) {
+    return null;
+  }
+  const trackUrls = Object.entries(resourceLinks.trackUrl)
+  if (trackUrls.length > 0) {
+    return trackUrls.at(0)![1];
+  }
+  const albumUrls = Object.entries(resourceLinks.albumUrl)
+  if (albumUrls.length > 0) {
+    return albumUrls.at(0)![1];
+  }
+  return null;
 }
 
 function pauseMedia(tabId: number) {
@@ -123,20 +142,20 @@ function seekStart(tabId: number) {
               </div>
               <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
                 by
-                <a v-if="item.state.resourceLinks?.artistUrl" :href="item.state.resourceLinks?.artistUrl"
-                  target="_blank"
-                  class="border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6 no-underline"
-                  :title="item.state.metadata.artist">{{
-                    item.state.metadata.artist }}</a>
-                <span v-else>{{ item.state.metadata.artist }}</span>
+                <TextWithLinks
+                  a-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6"
+                  :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
               </div>
               <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
                 on
-                <a v-if="item.state.resourceLinks?.albumUrl" :href="item.state.resourceLinks?.albumUrl" target="_blank"
+                <TextWithLinks
+                  a-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6"
+                  :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
+                <!-- <a v-if="item.state.resourceLinks?.albumUrl" target="_blank"
                   class="border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6 no-underline"
                   :title="item.state.metadata.album">{{
                     item.state.metadata.album }}</a>
-                <span v-else>{{ item.state.metadata.album }}</span>
+                <span v-else>{{ item.state.metadata.album }}</span> -->
               </div>
               <div class="text-gray-500 truncate dark:text-gray-400"
                 v-if="item.state.playbackState && item.state.playbackState.positionTimestamp && item.state.metadata.duration">
@@ -174,13 +193,14 @@ function seekStart(tabId: number) {
                   <a class="no-underline text-gray-500 hover:text-gray-400 transition-colors duration-200"
                     @click="showTab(item.tabId)">{{ getHostname(item.state.source.siteUrl) }}</a>
                 </div>
-                <div class="flex-shrink-0"
-                  v-if="item.state.resourceLinks?.trackUrl || item.state.resourceLinks?.albumUrl">
-                  <a :href="item.state.resourceLinks?.trackUrl || item.state.resourceLinks?.albumUrl" target="_blank"
-                    title="Share" class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
-                    <ShareIcon class="size-4 mt-1"></ShareIcon>
-                  </a>
-                </div>
+                <template v-for="shareLink in [getShareLink(item.state.resourceLinks)]">
+                  <div v-if="shareLink" class="flex-shrink-0">
+                    <a :href="shareLink" target="_blank" title="Share"
+                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      <ShareIcon class="size-4 mt-1"></ShareIcon>
+                    </a>
+                  </div>
+                </template>
                 <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
                   <a :href="getHomepage(item.state.source.siteUrl)"
                     :title="'Open ' + getHostname(item.state.source.siteUrl)" target="_blank">

@@ -33,7 +33,10 @@ export namespace Constants {
     'com.spotify.open': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
-      artist: new RegExp('/artist/')
+      artist: new RegExp('/artist/'),
+      // track: undefined,
+      // album: undefined,
+      // artist: undefined
     },
     'com.youtube.music': {
       track: new RegExp('/watch'),

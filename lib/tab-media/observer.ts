@@ -4,7 +4,7 @@ import { getFaviconUrl, isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { ElementSourceObserver, IElementSource, TabMediaElementSource, TabProgressElementSource } from "./element-source";
 import { ProgressElement, ProgressElementPrecision } from "./progress-element";
-import { findBestMatchingResourceLinks, ResourceLinkPatterns } from "./resource-links";
+import { findBestMatchingResourceLinks, ResourceLinkPatterns, ResourceType } from "./resource-links";
 import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
 
 /**
@@ -483,7 +483,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
             ? Constants.URL_MATCHES[reverseDomain]
             : ({} as ResourceLinkPatterns)
         )
-        : new Map()
+        : new Map<ResourceType, Map<string, string>>()
     );
     for (const callback of this.eventCallbacks) {
       callback(serialized);
