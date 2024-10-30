@@ -37,7 +37,7 @@ function extractComponents(
       pos = index + upperKey.length;
       if (!takenIndices.has(index)) {
         components.set(index, {
-          text: text.substring(index, pos), // FIXME
+          text: text.substring(index, pos),
           href: value
         });
         for (let i = index; i < pos; i++) {
