@@ -218,8 +218,8 @@ function seekStart(tabId: number) {
                 <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
                   <a :href="getHomepage(item.state.source.siteUrl)"
                     :title="'Open ' + getHostname(item.state.source.siteUrl)" target="_blank">
-                    <img class="w-4 h-4 mt-1 rounded-md object-cover object-center grayscale"
-                      :src="item.state.source?.faviconUrl" alt="Favicon">
+                    <img class="w-4 h-4 mt-1 rounded-md object-cover object-center" :src="item.state.source?.faviconUrl"
+                      alt="Favicon">
                   </a>
                 </div>
               </div>
