@@ -498,16 +498,11 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
         || !isMediaElementPaused(this.currentMediaElement));
 
     let playbackState: TabMediaPlaybackState | null = null;
-    if (this.currentMediaElement) {
-      playbackState = new TabMediaPlaybackState(
-        PlaybackStateSource.MediaElement,
-        Math.floor(this.currentMediaElement.currentTime * 1000),
-        Math.floor(this.currentMediaElement.duration * 1000),
-        isPlaying,
-        Date.now()
-      );
-    }
-    else if (this.currentProgressElement !== null
+
+    // Prefer the progress element over the media element because the
+    // media element can have inaccurate playback timestamps when it's reused
+    // across songs or playing a portion of the media and not all of it.
+    if (this.currentProgressElement !== null
       && this.currentProgressElement.value !== null
       && this.currentProgressElement.max !== null
     ) {
@@ -528,6 +523,15 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
         playbackStateSource,
         Math.floor(this.currentProgressElement.value),
         Math.floor(this.currentProgressElement.max),
+        isPlaying,
+        Date.now()
+      );
+    }
+    else if (this.currentMediaElement) {
+      playbackState = new TabMediaPlaybackState(
+        PlaybackStateSource.MediaElement,
+        Math.floor(this.currentMediaElement.currentTime * 1000),
+        Math.floor(this.currentMediaElement.duration * 1000),
         isPlaying,
         Date.now()
       );
