@@ -7,6 +7,7 @@ const props = defineProps({
     required: true
   },
   links: Object,
+  baseClass: String,
   linkClass: String
 });
 
@@ -78,10 +79,12 @@ watch(() => props.links, () => init())
 </script>
 
 <template>
-  <template v-for="component in textComponents">
-    <a v-if="component.href !== null" :href="component.href" target="_blank" :class="linkClass" v-bind="$attrs">{{
-      component.text
-    }}</a>
-    <span v-else v-bind="$attrs">{{ component.text }}</span>
-  </template>
+  <div>
+    <template v-for="component in textComponents">
+      <a v-if="component.href !== null" :href="component.href" target="_blank" :class="[baseClass, linkClass]">{{
+        component.text
+      }}</a>
+      <span v-else :class="baseClass">{{ component.text }}</span>
+    </template>
+  </div>
 </template>

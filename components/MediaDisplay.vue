@@ -157,12 +157,12 @@ function seekStart(tabId: number) {
                   </div>
                 </div>
                 <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
-                  <TextWithLinks class="leading-6"
+                  <TextWithLinks base-class="leading-6"
                     link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
                     :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
                 </div>
                 <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
-                  <TextWithLinks class="leading-6"
+                  <TextWithLinks base-class="leading-6"
                     link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
                     :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
                 </div>
