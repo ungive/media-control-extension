@@ -299,10 +299,10 @@ export class PlaybackPositionProgressElementObserver
       const timeDeltaMillis = nowTimestamp - state.lastValueTimestamp;
       const timeDeltaSecs = timeDeltaMillis / 1000.0;
       let positionDelta = newValue - lastValue;
-      let isMillis = true;
+      let isMillis = false;
       let epsilon = Constants.PROGRESS_MILLIS_EPSILON;
-      if (positionDelta < timeDeltaSecs * 2) {
-        isMillis = false;
+      if (positionDelta >= timeDeltaMillis / 2) {
+        isMillis = true
       }
       if (!isMillis) {
         state.progressElement.valuePrecision = ProgressElementPrecision.Seconds;
