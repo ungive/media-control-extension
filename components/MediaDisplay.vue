@@ -198,8 +198,8 @@ function openPopout() {
               </PlayCircleIcon>
               <PauseCircleIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
             </div>
-            <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-0.5">
-              <div class="flex-grow">
+            <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
+              <div class="flex-grow -translate-y-0.5">
                 <div class="flex cursor-default" v-if="item.state.source">
                   <div class="flex-1 truncate">
                     <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
