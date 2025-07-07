@@ -181,7 +181,7 @@ function openPopout() {
       </h4>
       <div v-if="!isPopout()" class="flex-shrink-0">
         <a @click="openPopout" title="Popout window" target="_blank"
-          class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 group-hover:opacity-100 transition-all duration-150">
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 group-hover:opacity-100 transition-all duration-150">
           <Square2StackIcon class="size-4 mt-1"></Square2StackIcon>
         </a>
       </div>
@@ -204,24 +204,24 @@ function openPopout() {
                 <div class="flex cursor-default" v-if="item.state.source">
                   <div class="flex-1 truncate">
                     <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
-                      class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-200 transition-colors duration-150 leading-6 no-underline">{{
+                      class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline">{{
                         item.state.metadata.title }}</a>
                   </div>
                   <div class="flex-shrink-0 ms-12">
                     <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
                       <XMarkIcon class="size-4 mt-1"></XMarkIcon>
                     </a>
                   </div>
                 </div>
-                <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
-                  <TextWithLinks base-class="leading-6"
-                    link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
+                <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
+                  <TextWithLinks base-class="leading-6 text-gray-500 dark:text-gray-400"
+                    link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                     :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
                 </div>
-                <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
-                  <TextWithLinks base-class="leading-6"
-                    link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
+                <div class="truncate -mt-1" v-if="item.state.metadata?.album">
+                  <TextWithLinks base-class="leading-6 text-gray-500 dark:text-gray-400"
+                    link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                     :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
                 </div>
               </div>
@@ -236,23 +236,23 @@ function openPopout() {
                   :class="[item.hasControls ? '' : 'opacity-40 cursor-default pointer-events-none']">
                   <div class="flex-shrink-0 -ms-0.5">
                     <a @click="seekStart(item.tabId)" title="Replay this track"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
                     </a>
                   </div>
                   <div class="flex-shrink-0 ms-2">
                     <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <PauseIcon class="size-4 mt-1"></PauseIcon>
                     </a>
                     <a v-else @click="playMedia(item.tabId)" title="Play"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <PlayIcon class="size-4 mt-1"></PlayIcon>
                     </a>
                   </div>
                   <div class="flex-shrink-0 ms-2">
                     <a @click="nextTrack(item.tabId)" title="Next track"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <ForwardIcon class="size-4 mt-1"></ForwardIcon>
                     </a>
                   </div>
@@ -264,7 +264,7 @@ function openPopout() {
                 <template v-for="shareLink in [getShareLink(item.state.resourceLinks)]">
                   <div v-if="shareLink" class="flex-shrink-0">
                     <a :href="shareLink" target="_blank" title="Share"
-                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <ShareIcon class="size-4 mt-1"></ShareIcon>
                     </a>
                   </div>
