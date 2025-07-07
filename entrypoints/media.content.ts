@@ -78,11 +78,11 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
   }
 });
 
-function onMediaUpdated(state: BrowserMedia.MediaState) {
+function onMediaUpdated(state: BrowserMedia.MediaState | null) {
   browser.runtime.sendMessage({
     type: TabMessage.MediaChanged,
     payload: {
-      stateJson: BrowserMedia.MediaState.toJSON(state) as object,
+      stateJson: state ? BrowserMedia.MediaState.toJSON(state) as object : null,
       hasControls: mediaObserver?.mediaElement !== null
         || lastInteractedMediaElement !== null
     } as MediaChangedPayload,

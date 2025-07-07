@@ -32,7 +32,7 @@ export interface RuntimeMessage {
 }
 
 export interface MediaChangedPayload {
-  stateJson: object
+  stateJson: object | null
   hasControls: boolean
 }
 

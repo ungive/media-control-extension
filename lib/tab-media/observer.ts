@@ -368,7 +368,7 @@ enum TabMediaObserverState {
 
 export type MediaElementObserver = ElementGroupObserver<HTMLMediaElement, ElementEventCallback<HTMLMediaElement>>;
 
-export type TabMediaStateCallback = (state: BrowserMedia.MediaState) => void
+export type TabMediaStateCallback = (state: BrowserMedia.MediaState | null) => void
 
 export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
@@ -454,6 +454,9 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   #handleUpdate() {
     let state = this.#currentMediaState();
     if (state === null) {
+      for (const callback of this.eventCallbacks) {
+        callback(null);
+      }
       return;
     }
     const stateChange = state.determineChanges(this.previousMediaState);

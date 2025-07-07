@@ -106,7 +106,9 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
         const mediaChangedPayload = message.payload as MediaChangedPayload;
         handleTabMedia(
           sender.tab.id,
-          BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson),
+          mediaChangedPayload.stateJson
+            ? BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson)
+            : null,
           mediaChangedPayload.hasControls
         );
       }
@@ -176,14 +178,11 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
 }
 
-async function onTabAudible(tabId: number, audible: boolean, tab: Browser.tabs.Tab) {
-  if (audible) {
-    registerTab(tab);
-  }
-  else {
-    unregisterTab(tabId);
-  }
+async function onTabAudible(tabId: number, tab: Browser.tabs.Tab) {
+  registerTab(tab);
 }
+
+const completedTabs = new Set<number>();
 
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (tabId !== tab.id) {
@@ -192,13 +191,24 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.discarded === true) {
     return unregisterTab(tabId);
   }
-  if (changeInfo.audible !== undefined) {
-    return onTabAudible(tabId, changeInfo.audible, tab);
+  if (changeInfo.audible !== undefined && changeInfo.audible) {
+    return onTabAudible(tabId, tab);
+  }
+  if (changeInfo.status) {
+    if (changeInfo.status === 'complete') {
+      completedTabs.add(tabId);
+    } else if (completedTabs.has(tabId)) {
+      // Only unregister the tab when it is in loading state
+      // and it has has completely loaded once before.
+      completedTabs.delete(tabId);
+      unregisterTab(tabId);
+    }
   }
 });
 
 browser.tabs.onRemoved.addListener(async (tabId) => {
   unregisterTab(tabId);
+  completedTabs.delete(tabId);
 });
 
 browser.runtime.onSuspend.addListener(async () => {
