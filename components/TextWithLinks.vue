@@ -7,7 +7,7 @@ const props = defineProps({
     required: true
   },
   links: Object,
-  aClass: String
+  linkClass: String
 });
 
 interface TextComponent {
@@ -79,7 +79,9 @@ watch(() => props.links, () => init())
 
 <template>
   <template v-for="component in textComponents">
-    <a v-if="component.href !== null" :href="component.href" target="_blank" :class="aClass">{{ component.text }}</a>
-    <template v-else>{{ component.text }}</template>
+    <a v-if="component.href !== null" :href="component.href" target="_blank" :class="linkClass" v-bind="$attrs">{{
+      component.text
+    }}</a>
+    <span v-else :class="class" v-bind="$attrs">{{ component.text }}</span>
   </template>
 </template>

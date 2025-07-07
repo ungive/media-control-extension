@@ -134,42 +134,38 @@ function seekStart(tabId: number) {
     <div class="flow-root min-w-120 max-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
         <li class="py-3 group" v-for="item in items">
-          <div class="flex items-center" v-if="item.state.metadata">
+          <div class="flex items-stretch" v-if="item.state.metadata">
             <div class="flex-shrink-0">
-              <img class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center shadow-sm shadow-zinc-500"
+              <img
+                class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center shadow-sm shadow-zinc-500 dark:shadow-zinc-950"
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
-            <div class="flex-1 min-w-0 ms-4 text-sm">
-              <div class="flex items-center cursor-default" v-if="item.state.source">
-                <div class="flex-1 truncate">
-                  <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
-                    class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-200 transition-colors duration-150 leading-6 no-underline">{{
-                      item.state.metadata.title }}</a>
+            <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm">
+              <div class="flex-grow">
+                <div class="flex cursor-default" v-if="item.state.source">
+                  <div class="flex-1 truncate">
+                    <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
+                      class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-200 transition-colors duration-150 leading-6 no-underline">{{
+                        item.state.metadata.title }}</a>
+                  </div>
+                  <div class="flex-shrink-0 ms-12">
+                    <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
+                      <XMarkIcon class="size-4 mt-1"></XMarkIcon>
+                    </a>
+                  </div>
                 </div>
-                <div class="flex-shrink-0 ms-12">
-                  <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
-                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
-                    <XMarkIcon class="size-4 mt-1"></XMarkIcon>
-                  </a>
+                <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
+                  <TextWithLinks class="leading-6"
+                    link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
+                    :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
                 </div>
-              </div>
-              <div class="text-gray-500 dark:text-gray-400 truncate -mt-1" v-if="item.state.metadata?.artist">
-                by
-                <TextWithLinks
-                  a-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6"
-                  :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
-              </div>
-              <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
-                on
-                <TextWithLinks
-                  a-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6"
-                  :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
-                <!-- <a v-if="item.state.resourceLinks?.albumUrl" target="_blank"
-                  class="border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200 leading-6 no-underline"
-                  :title="item.state.metadata.album">{{
-                    item.state.metadata.album }}</a>
-                <span v-else>{{ item.state.metadata.album }}</span> -->
+                <div class="text-gray-500 truncate dark:text-gray-400 -mt-1" v-if="item.state.metadata?.album">
+                  <TextWithLinks class="leading-6"
+                    link-class="no-underline border-b-1 border-gray-600 hover:border-gray-500 transition-colors duration-200"
+                    :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
+                </div>
               </div>
               <div class="text-gray-500 truncate dark:text-gray-400"
                 v-if="item.state.playbackState && item.state.playbackState.positionTimestamp && item.state.metadata.duration">
