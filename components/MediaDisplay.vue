@@ -59,7 +59,17 @@ onMounted(() => {
   } as RuntimeMessage);
 });
 
+async function focusTabWindow(tabId: number) {
+  const tab = await browser.tabs.get(tabId);
+  if (tab.windowId !== undefined) {
+    await browser.windows.update(tab.windowId, {
+      focused: true
+    });
+  }
+}
+
 function showTab(tabId: number, closePopup: boolean = true) {
+  focusTabWindow(tabId)
   browser.tabs.update(tabId, { active: true });
   if (closePopup && !isPopout()) {
     window.close();
