@@ -149,7 +149,7 @@ function seekStart(tabId: number) {
                 </div>
                 <div class="flex-shrink-0 ms-12">
                   <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
-                    class="text-gray-400 hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
+                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
                     <XMarkIcon class="size-4 mt-1"></XMarkIcon>
                   </a>
                 </div>
@@ -182,35 +182,35 @@ function seekStart(tabId: number) {
                   :class="[item.hasControls ? '' : 'opacity-40 cursor-default pointer-events-none']">
                   <div class="flex-shrink-0 -ms-0.5">
                     <a @click="seekStart(item.tabId)" title="Replay this track"
-                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
                       <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
                     </a>
                   </div>
                   <div class="flex-shrink-0 ms-2">
                     <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
-                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
                       <PauseIcon class="size-4 mt-1"></PauseIcon>
                     </a>
                     <a v-else @click="playMedia(item.tabId)" title="Play"
-                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
                       <PlayIcon class="size-4 mt-1"></PlayIcon>
                     </a>
                   </div>
                   <div class="flex-shrink-0 ms-2">
                     <a @click="nextTrack(item.tabId)" title="Next track"
-                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
                       <ForwardIcon class="size-4 mt-1"></ForwardIcon>
                     </a>
                   </div>
                 </div>
                 <div class="flex-1 min-w-0 ms-2.5" v-if="item.state.source?.siteUrl">
-                  <a class="no-underline text-gray-500 hover:text-gray-400 transition-colors duration-200"
+                  <a class="no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
                     @click="showTab(item.tabId)">{{ getHostname(item.state.source.siteUrl) }}</a>
                 </div>
                 <template v-for="shareLink in [getShareLink(item.state.resourceLinks)]">
                   <div v-if="shareLink" class="flex-shrink-0">
                     <a :href="shareLink" target="_blank" title="Share"
-                      class="text-gray-400 hover:text-gray-300 transition-colors duration-200">
+                      class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200">
                       <ShareIcon class="size-4 mt-1"></ShareIcon>
                     </a>
                   </div>
