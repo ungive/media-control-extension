@@ -178,7 +178,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
 }
 
-async function onTabAudible(tabId: number, tab: Browser.tabs.Tab) {
+async function onTabAudible(tab: Browser.tabs.Tab) {
   registerTab(tab);
 }
 
@@ -192,7 +192,7 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     return unregisterTab(tabId);
   }
   if (changeInfo.audible !== undefined && changeInfo.audible) {
-    return onTabAudible(tabId, tab);
+    return onTabAudible(tab);
   }
   if (changeInfo.status) {
     if (changeInfo.status === 'complete') {
@@ -218,8 +218,8 @@ browser.runtime.onSuspend.addListener(async () => {
 
 async function init() {
   for (const tab of await browser.tabs.query({})) {
-    if (tab.id !== undefined && tab.audible !== undefined) {
-      onTabAudible(tab.id, tab.audible, tab);
+    if (tab.id !== undefined && tab.audible !== undefined && tab.audible) {
+      onTabAudible(tab);
     }
   }
   // console.log(BrowserType[Util.getCurrentBrowser()]);
