@@ -127,7 +127,7 @@ function seekStart(tabId: number) {
 <template>
   <div class="w-full max-w-lg py-2 px-4">
     <div class="flex items-center justify-between my-2">
-      <h4 class="text-base font-bold leading-none text-gray-900 dark:text-gray-200">
+      <h4 class="text-base font-bold leading-none text-gray-900 dark:text-gray-200 mx-0.5">
         Media Control
       </h4>
     </div>
@@ -136,7 +136,7 @@ function seekStart(tabId: number) {
         <li class="py-3 sm:py-4 group" v-for="item in items">
           <div class="flex items-center" v-if="item.state.metadata">
             <div class="flex-shrink-0">
-              <img class="w-28 h-28 rounded-md cursor-pointer object-cover object-center shadow-sm shadow-zinc-950"
+              <img class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center shadow-sm shadow-zinc-500"
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
