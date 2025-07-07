@@ -91,9 +91,19 @@ function selectImage(images: BrowserMedia.MediaState_Image[], minRem: number): s
     size: number
   } | null = null;
   for (const image of images) {
-    if (image.width === undefined || image.height === undefined || image.url === undefined)
+    if (image.url === undefined) {
+      continue
+    }
+    let size = 0
+    if (image.width === undefined && image.height === undefined) {
       continue;
-    const size = Math.min(image.width, image.height);
+    } else if (image.height === undefined) {
+      size = image.width! // Assume it's a square
+    } else if (image.width === undefined) {
+      size = image.height! // Assume it's a square
+    } else {
+      size = Math.min(image.width, image.height)
+    }
     if (selectedImage === null
       || (size < minPixels && size > selectedImage.size)
       || (size >= minPixels && (selectedImage.size < minPixels || size < selectedImage.size))) {
