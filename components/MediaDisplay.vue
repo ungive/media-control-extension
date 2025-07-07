@@ -191,7 +191,8 @@ function openPopout() {
         <li class="py-3 group" v-for="item in computedItems" :key="item.tabId">
           <div class="flex items-stretch" v-if="item.state.metadata">
             <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
-              <img v-if="item.src" class="w-28 h-28 rounded-sm object-cover object-center"
+              <img v-if="item.src"
+                class="w-28 h-28 rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none"
                 :title="item.state.metadata.album" :src="item.src" alt="Cover">
               <PlayCircleIcon v-else-if="item.state.playbackState?.playing"
                 class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200">
