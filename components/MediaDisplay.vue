@@ -170,7 +170,7 @@ function openPopout() {
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
-            <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm">
+            <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-0.5">
               <div class="flex-grow">
                 <div class="flex cursor-default" v-if="item.state.source">
                   <div class="flex-1 truncate">
