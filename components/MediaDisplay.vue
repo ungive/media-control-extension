@@ -22,7 +22,7 @@ onMounted(() => {
           tabId: m.tabId,
           state: BrowserMedia.MediaState.fromJSON(m.stateJson),
           hasControls: m.hasControls
-        }));
+        })).sort((a, b) => b.tabId - a.tabId);
         return;
     }
   });
