@@ -174,9 +174,9 @@ function openPopout() {
               <img v-if="item.src" class="w-28 h-28 rounded-sm object-cover object-center"
                 :title="item.state.metadata.album" :src="item.src" alt="Cover">
               <PlayCircleIcon v-else-if="item.state.playbackState?.playing"
-                class="w-28 h-28 text-neutral-800 dark:text-neutral-200">
+                class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200">
               </PlayCircleIcon>
-              <PauseCircleIcon v-else class="w-28 h-28 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
+              <PauseCircleIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
             </div>
             <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-0.5">
               <div class="flex-grow">
