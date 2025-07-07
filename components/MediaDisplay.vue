@@ -133,7 +133,7 @@ function seekStart(tabId: number) {
     </div>
     <div class="flow-root min-w-120 max-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <li class="py-3 sm:py-4 group" v-for="item in items">
+        <li class="py-3 group" v-for="item in items">
           <div class="flex items-center" v-if="item.state.metadata">
             <div class="flex-shrink-0">
               <img class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center shadow-sm shadow-zinc-500"
