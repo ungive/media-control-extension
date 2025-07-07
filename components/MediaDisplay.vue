@@ -166,8 +166,7 @@ function openPopout() {
         <li class="py-3 group" v-for="item in items">
           <div class="flex items-stretch" v-if="item.state.metadata">
             <div class="flex-shrink-0">
-              <img
-                class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center shadow-sm shadow-zinc-500 dark:shadow-zinc-950"
+              <img class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center"
                 :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
                 @click="showTab(item.tabId)">
             </div>
