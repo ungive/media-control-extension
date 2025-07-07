@@ -2,11 +2,14 @@
 export enum ExtensionMessage {
   SendMediaUpdates = 1,
   CancelMediaUpdates,
-  CurrentMedia
+  CurrentMedia,
+  PopoutOpened,
+  PopoutClosed,
+  PopoutState,
 }
 
 export enum TabMessage {
-  MediaChanged = 100
+  MediaChanged = 100,
 }
 
 export enum PopupMessage {
@@ -14,11 +17,17 @@ export enum PopupMessage {
   PauseMedia,
   PlayMedia,
   SeekStart,
-  NextTrack
+  NextTrack,
+  OpenPopout,
+  GetPopoutState,
+}
+
+export enum PopoutMessage {
+  WindowSize = 300,
 }
 
 export interface RuntimeMessage {
-  type: ExtensionMessage | TabMessage | PopupMessage
+  type: ExtensionMessage | TabMessage | PopupMessage | PopoutMessage
   payload: any
 }
 
@@ -35,4 +44,13 @@ export interface CurrentMediaElementPayload {
 
 export interface CurrentMediaPayload {
   media: CurrentMediaElementPayload[]
+}
+
+export interface WindowSizePayload {
+  width: number
+  height: number
+}
+
+export interface PopoutStatePaylaod {
+  result: boolean
 }

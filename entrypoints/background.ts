@@ -1,4 +1,4 @@
-import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
+import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, PopoutMessage, PopoutStatePaylaod as PopoutStatePayload, PopupMessage, RuntimeMessage, TabMessage, WindowSizePayload } from "@/lib/messages";
 import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
 import { Browser } from "wxt/browser";
@@ -11,6 +11,8 @@ const tabs: Map<TabId, {
 } | null> = new Map();
 
 let connectedPopups = 0;
+
+let popoutWindowId: number | undefined = undefined;
 
 function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
   const playbackState = state.playbackState ?
@@ -96,7 +98,7 @@ async function handleTabMedia(
   }
 }
 
-browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) => {
+browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, sendResponse) => {
   switch (message.type) {
     // Media changed in a tab
     case TabMessage.MediaChanged:
@@ -112,6 +114,35 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) =>
     // The popup requests currently playing media
     case PopupMessage.GetCurrentMedia:
       sendTabMedia();
+      break;
+    // The popout reports its desired window size
+    case PopoutMessage.WindowSize:
+      const windowSizePayload = message.payload as WindowSizePayload
+      if (popoutWindowId !== undefined) {
+        browser.windows.update(popoutWindowId, {
+          width: Math.max(0, Math.ceil(windowSizePayload.width)),
+          height: Math.max(0, Math.ceil(windowSizePayload.height)),
+        });
+      }
+      break;
+    // Open the popup in a popout window
+    case PopupMessage.OpenPopout:
+      if (popoutWindowId !== undefined) {
+        focusPopout()
+      } else {
+        createPopout()
+      }
+      break;
+    // A request from a popup whether a popout window exists
+    case PopupMessage.GetPopoutState:
+      // We cannot use sendResponse with possibly multiple popup instances
+      // because that will lead to the response being emtpy (for some reason).
+      browser.runtime.sendMessage({
+        type: ExtensionMessage.PopoutState,
+        payload: {
+          result: await hasPopoutWindow()
+        } as PopoutStatePayload
+      } as RuntimeMessage)
       break;
   }
 });
@@ -193,6 +224,66 @@ async function init() {
       }
       connectedPopups = Math.max(0, newValue);
     })
+  });
+}
+
+function onPopoutOpened() {
+  console.assert(popoutWindowId !== undefined)
+  browser.runtime.sendMessage({
+    type: ExtensionMessage.PopoutOpened
+  } as RuntimeMessage)
+}
+
+function onPopoutClosed() {
+  console.assert(popoutWindowId === undefined)
+  browser.runtime.sendMessage({
+    type: ExtensionMessage.PopoutClosed
+  } as RuntimeMessage)
+}
+
+browser.windows.onRemoved.addListener((closedWindowId) => {
+  if (closedWindowId === popoutWindowId) {
+    popoutWindowId = undefined;
+    onPopoutClosed();
+  }
+})
+
+async function hasPopoutWindow(): Promise<boolean> {
+  if (popoutWindowId === undefined) {
+    return false;
+  }
+  try {
+    await browser.windows.get(popoutWindowId);
+    return true;
+  } catch (err) {
+    popoutWindowId = undefined;
+    onPopoutClosed();
+    return false;
+  }
+}
+
+async function createPopout() {
+  if (popoutWindowId !== undefined) {
+    console.warn("Attempting to create a popout window while one already exists");
+    return;
+  }
+  const popup = await browser.windows.create({
+    url: browser.runtime.getURL('/popup.html?popout=1'),
+    type: 'popup',
+    width: 528,
+    height: 100,
+  });
+  popoutWindowId = popup.id;
+  onPopoutOpened()
+}
+
+async function focusPopout() {
+  if (popoutWindowId === undefined) {
+    console.warn("Attemptd to focus the popout while it does not exist")
+    return
+  }
+  await browser.windows.update(popoutWindowId, {
+    focused: true
   });
 }
 

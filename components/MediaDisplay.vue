@@ -1,7 +1,9 @@
 <script lang="ts" setup>
-import { CurrentMediaPayload, ExtensionMessage, PopupMessage, RuntimeMessage } from '@/lib/messages';
+import { isPopout } from '@/entrypoints/popup/popout';
+import { CurrentMediaPayload, ExtensionMessage, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
+import { Square2StackIcon } from '@heroicons/vue/20/solid';
 import { onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
 import ProgressBar from './ProgressBar.vue';
@@ -13,6 +15,11 @@ const items = ref<{
   hasControls: boolean
 }[]>([]);
 
+const hasPopout = ref(false)
+browser.runtime.sendMessage({
+  type: PopupMessage.GetPopoutState
+} as RuntimeMessage);
+
 onMounted(() => {
   browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
     switch (message.type) {
@@ -23,7 +30,17 @@ onMounted(() => {
           state: BrowserMedia.MediaState.fromJSON(m.stateJson),
           hasControls: m.hasControls
         })).sort((a, b) => b.tabId - a.tabId);
-        return;
+        break;
+      case ExtensionMessage.PopoutOpened:
+        hasPopout.value = true
+        break;
+      case ExtensionMessage.PopoutClosed:
+        hasPopout.value = false
+        break;
+      case ExtensionMessage.PopoutState:
+        const popoutStatePayload = message.payload as PopoutStatePaylaod
+        hasPopout.value = popoutStatePayload.result
+        break;
     }
   });
 
@@ -38,7 +55,7 @@ onMounted(() => {
 
 function showTab(tabId: number, closePopup: boolean = true) {
   browser.tabs.update(tabId, { active: true });
-  if (closePopup) {
+  if (closePopup && !isPopout()) {
     window.close();
   }
 }
@@ -122,14 +139,27 @@ function seekStart(tabId: number) {
     type: PopupMessage.SeekStart
   } as RuntimeMessage);
 }
+
+function openPopout() {
+  browser.runtime.sendMessage({
+    type: PopupMessage.OpenPopout
+  } as RuntimeMessage);
+}
+
 </script>
 
 <template>
-  <div class="w-full max-w-lg py-2 px-4">
+  <div id="root" class="w-full max-w-lg py-2 px-4">
     <div class="flex items-center justify-between my-2">
-      <h4 class="text-base font-bold leading-none text-gray-900 dark:text-gray-200 mx-0.5">
+      <h4 class="flex-1 text-base font-bold leading-none text-gray-900 dark:text-gray-200">
         Media Control
       </h4>
+      <div v-if="!isPopout()" class="flex-shrink-0">
+        <a @click="openPopout" title="Popout window" target="_blank"
+          class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 group-hover:opacity-100 transition-all duration-150">
+          <Square2StackIcon class="size-4 mt-1"></Square2StackIcon>
+        </a>
+      </div>
     </div>
     <div class="flow-root min-w-120 max-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
