@@ -82,6 +82,6 @@ watch(() => props.links, () => init())
     <a v-if="component.href !== null" :href="component.href" target="_blank" :class="linkClass" v-bind="$attrs">{{
       component.text
     }}</a>
-    <span v-else :class="class" v-bind="$attrs">{{ component.text }}</span>
+    <span v-else v-bind="$attrs">{{ component.text }}</span>
   </template>
 </template>
