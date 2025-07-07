@@ -1,7 +1,7 @@
 import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
 import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
-import { Tabs } from "wxt/browser";
+import { Browser } from "wxt/browser";
 
 type TabId = number;
 const tabs: Map<TabId, {
@@ -116,7 +116,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender) =>
   }
 });
 
-async function registerTab(tab: Tabs.Tab) {
+async function registerTab(tab: Browser.tabs.Tab) {
   if (!tab.id) {
     return console.error('failed to register tab without an id');
   }
@@ -145,7 +145,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
 }
 
-async function onTabAudible(tabId: number, audible: boolean, tab: Tabs.Tab) {
+async function onTabAudible(tabId: number, audible: boolean, tab: Browser.tabs.Tab) {
   if (audible) {
     registerTab(tab);
   }

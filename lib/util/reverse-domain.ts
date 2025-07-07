@@ -1,4 +1,4 @@
-import { Tabs } from "wxt/browser";
+import { Browser } from "wxt/browser";
 
 /**
  * Namespace for functions to deal with reverse domains.
@@ -47,7 +47,7 @@ export namespace ReverseDomain {
   }
 
   export function forTab(
-    tab: Tabs.Tab,
+    tab: Browser.tabs.Tab,
     options = defaultOptions
   ): string | undefined {
     return tab.url ? forUrl(new URL(tab.url), options) : undefined;
