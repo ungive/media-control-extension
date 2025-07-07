@@ -2,9 +2,9 @@
 import { isPopout } from '@/entrypoints/popup/popout';
 import { CurrentMediaPayload, ExtensionMessage, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { ArrowUturnLeftIcon, ForwardIcon, PauseIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
+import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
@@ -14,6 +14,12 @@ const items = ref<{
   state: BrowserMedia.MediaState
   hasControls: boolean
 }[]>([]);
+
+const coverMinRem = 7
+const computedItems = computed(() => items.value.map(item => ({
+  ...item,
+  src: selectImage(item.state.images, coverMinRem)
+})))
 
 const hasPopout = ref(false)
 browser.runtime.sendMessage({
@@ -145,7 +151,6 @@ function openPopout() {
     type: PopupMessage.OpenPopout
   } as RuntimeMessage);
 }
-
 </script>
 
 <template>
@@ -163,12 +168,15 @@ function openPopout() {
     </div>
     <div class="flow-root min-w-120 max-w-120">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <li class="py-3 group" v-for="item in items">
+        <li class="py-3 group" v-for="item in computedItems" :key="item.tabId">
           <div class="flex items-stretch" v-if="item.state.metadata">
-            <div class="flex-shrink-0">
-              <img class="w-28 h-28 rounded-sm cursor-pointer object-cover object-center"
-                :title="item.state.metadata.album" :src="selectImage(item.state.images, 7)" alt="Cover"
-                @click="showTab(item.tabId)">
+            <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
+              <img v-if="item.src" class="w-28 h-28 rounded-sm object-cover object-center"
+                :title="item.state.metadata.album" :src="item.src" alt="Cover">
+              <PlayCircleIcon v-else-if="item.state.playbackState?.playing"
+                class="w-28 h-28 text-neutral-800 dark:text-neutral-200">
+              </PlayCircleIcon>
+              <PauseCircleIcon v-else class="w-28 h-28 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
             </div>
             <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-0.5">
               <div class="flex-grow">
