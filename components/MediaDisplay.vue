@@ -36,7 +36,18 @@ onMounted(() => {
           tabId: m.tabId,
           state: BrowserMedia.MediaState.fromJSON(m.stateJson),
           hasControls: m.hasControls
-        })).sort((a, b) => b.tabId - a.tabId);
+        })).sort((a, b) => {
+          if (a.state.playbackState?.positionTimestamp && !b.state.playbackState?.positionTimestamp) {
+            return -1
+          }
+          if (b.state.playbackState?.positionTimestamp && !a.state.playbackState?.positionTimestamp) {
+            return 1
+          }
+          if (a.state.playbackState?.positionTimestamp && b.state.playbackState?.positionTimestamp) {
+            return b.state.playbackState.positionTimestamp.getTime() - a.state.playbackState.positionTimestamp.getTime()
+          }
+          return b.tabId - a.tabId
+        });
         break;
       case ExtensionMessage.PopoutOpened:
         hasPopout.value = true
