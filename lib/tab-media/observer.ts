@@ -207,7 +207,7 @@ export type ElementMutationCallback<E> =
 export class PlaybackPositionProgressElementObserver
   implements IObserver<ElementMutationCallback<ProgressElement>> {
 
-  private progressElementState: Map<Element, ProgressElementState> = new Map();
+  private progressElementState: WeakMap<Element, ProgressElementState> = new WeakMap();
   private currentPlaybackPositionProgressElement: ProgressElement | null = null;
   // private lastPlaybackPositionValueUpdate: number | null = null;
 
