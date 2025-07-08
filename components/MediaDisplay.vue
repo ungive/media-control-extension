@@ -175,11 +175,11 @@ function openPopout() {
 
 <template>
   <div id="root" class="w-full max-w-lg py-2 px-4">
-    <div class="flex items-center justify-between my-2">
+    <div v-if="!isPopout()" class="flex items-center justify-between my-2">
       <h4 class="flex-1 text-base font-bold leading-none text-gray-900 dark:text-gray-200">
         Media Control
       </h4>
-      <div v-if="!isPopout()" class="flex-shrink-0">
+      <div class="flex-shrink-0">
         <a @click="openPopout" title="Popout window" target="_blank"
           class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 group-hover:opacity-100 transition-all duration-150">
           <Square2StackIcon class="size-4 mt-1"></Square2StackIcon>
