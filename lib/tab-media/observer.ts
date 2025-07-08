@@ -502,10 +502,20 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
     let playbackState: TabMediaPlaybackState | null = null;
 
-    // Prefer the progress element over the media element because the
-    // media element can have inaccurate playback timestamps when it's reused
-    // across songs or playing a portion of the media and not all of it.
-    if (this.currentProgressElement !== null
+    // FIXME: Handle the case when the media element reports an inaccurate
+    // playback position and duration, which is the case on e.g. Deezer.
+    // We have to prioritize the media element here because on e.g. YouTube
+    // the progress element is not updated when it is not visible,
+    // which is the case most of the time.
+    if (this.currentMediaElement) {
+      playbackState = new TabMediaPlaybackState(
+        PlaybackStateSource.MediaElement,
+        Math.floor(this.currentMediaElement.currentTime * 1000),
+        Math.floor(this.currentMediaElement.duration * 1000),
+        isPlaying,
+        Date.now()
+      );
+    } else if (this.currentProgressElement !== null
       && this.currentProgressElement.value !== null
       && this.currentProgressElement.max !== null
     ) {
