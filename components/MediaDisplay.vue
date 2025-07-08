@@ -198,18 +198,18 @@ function openPopout() {
 
 <template>
   <div id="root" class="w-full max-w-lg py-2 px-4">
-    <div v-if="!isPopout()" class="flex items-center justify-between my-2">
-      <h4 class="flex-1 text-base font-bold leading-none text-gray-900 dark:text-gray-200">
+    <div v-if="!isPopout()" class="flex justify-between my-2">
+      <h4 class="flex-1 text-base font-bold leading-none text-gray-600 dark:text-gray-400 ml-[0.1rem]">
         Media Control
       </h4>
       <div class="flex-shrink-0 flex items-center space-x-2">
         <a @click="openPopout" title="Popout window"
-          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-150">
+          class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
           <Square2StackIcon class="size-[1.125rem]"></Square2StackIcon>
         </a>
         <a href="https://github.com/ungive/media-control-extension" target="_blank" rel="noopener noreferrer"
           title="View source code"
-          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-150">
+          class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
           <Icon icon="mdi:github" class="size-[1.25rem]" />
         </a>
       </div>
