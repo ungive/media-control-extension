@@ -2,10 +2,11 @@
 import { isPopout } from '@/entrypoints/popup/popout';
 import { CurrentMediaPayload, ExtensionMessage, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon, XMarkIcon } from '@heroicons/vue/16/solid';
+import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon } from '@heroicons/vue/16/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
 import { computed, onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
+import OverflowingText from './OverflowingText.vue';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
 
@@ -201,18 +202,12 @@ function openPopout() {
             </div>
             <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
               <div class="flex-grow -translate-y-0.5">
-                <div class="flex cursor-default" v-if="item.state.source">
-                  <div class="flex-1 truncate">
+                <div class="flex cursor-default">
+                  <OverflowingText :key="item.state.metadata.title">
                     <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
                       class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline">{{
                         item.state.metadata.title }}</a>
-                  </div>
-                  <div class="flex-shrink-0 ms-12">
-                    <a @click="closeTab(item.tabId)" title="Close tab" target="_blank"
-                      class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150">
-                      <XMarkIcon class="size-4 mt-1"></XMarkIcon>
-                    </a>
-                  </div>
+                  </OverflowingText>
                 </div>
                 <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
                   <TextWithLinks base-class="leading-6 text-gray-500 dark:text-gray-400"
