@@ -16,28 +16,28 @@ export function isMediaElementPaused(element: HTMLMediaElement): boolean {
  * @returns The current page's favicon URL.
  */
 export function getFaviconUrl(): URL | null {
-  return new URL("/favicon.ico", location.origin);
+  // return new URL("/favicon.ico", location.origin);
 
-  // // Use this if the above code doesn't find the right favicon at some point
-  // let ico: URL | null = null;
-  // let png: URL | null = null;
-  // for (const element of document.querySelectorAll('link[rel*=icon]')) {
-  //   if (!(element instanceof HTMLLinkElement))
-  //     continue;
-  //   const href = element.getAttribute('href');
-  //   if (href === null)
-  //     continue;
-  //   const url = new URL(href, location.origin);
-  //   if (href.endsWith('.ico') && ico === null)
-  //     ico = url;
-  //   if (href.endsWith('.png') && png === null)
-  //     png = url;
-  //   if (ico !== null)
-  //     break;
-  // }
-  // if (ico !== null)
-  //   return new URL(ico);
-  // if (png !== null)
-  //   return png;
-  // return null;
+  // Use this if the above code doesn't find the right favicon at some point
+  let ico: URL | null = null;
+  let png: URL | null = null;
+  for (const element of document.querySelectorAll('link[rel*=icon]')) {
+    if (!(element instanceof HTMLLinkElement))
+      continue;
+    const href = element.getAttribute('href');
+    if (href === null)
+      continue;
+    const url = new URL(href, location.origin);
+    if (href.endsWith('.ico') && ico === null)
+      ico = url;
+    if (href.endsWith('.png') && png === null)
+      png = url;
+    if (ico !== null)
+      break;
+  }
+  if (ico !== null)
+    return ico;
+  if (png !== null)
+    return png;
+  return null;
 }
