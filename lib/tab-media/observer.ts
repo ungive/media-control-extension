@@ -334,11 +334,13 @@ export class PlaybackPositionProgressElementObserver
         const progressElements = source.get();
         const nowTimestamp = Date.now();
         for (const progressElement of progressElements) {
-          self.progressElementState.set(progressElement.element, {
-            progressElement: progressElement,
-            lastValue: progressElement.value,
-            lastValueTimestamp: nowTimestamp
-          });
+          if (!self.progressElementState.has(progressElement.element)) {
+            self.progressElementState.set(progressElement.element, {
+              progressElement: progressElement,
+              lastValue: progressElement.value,
+              lastValueTimestamp: nowTimestamp
+            });
+          }
         }
         return progressElements;
       }
