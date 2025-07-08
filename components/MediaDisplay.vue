@@ -210,12 +210,12 @@ function openPopout() {
                   </OverflowingText>
                 </div>
                 <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
-                  <TextWithLinks base-class="leading-6 text-gray-500 dark:text-gray-400"
+                  <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
                     link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                     :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
                 </div>
                 <div class="truncate -mt-1" v-if="item.state.metadata?.album">
-                  <TextWithLinks base-class="leading-6 text-gray-500 dark:text-gray-400"
+                  <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
                     link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                     :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
                 </div>

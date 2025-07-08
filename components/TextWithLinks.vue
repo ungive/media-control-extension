@@ -79,7 +79,7 @@ watch(() => props.links, () => init())
 </script>
 
 <template>
-  <div>
+  <div v-bind="$attrs">
     <template v-for="component in textComponents">
       <a v-if="component.href !== null" :href="component.href" target="_blank" :class="[baseClass, linkClass]">{{
         component.text
