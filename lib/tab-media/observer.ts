@@ -540,15 +540,6 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
         Date.now()
       );
     }
-    else if (this.currentMediaElement) {
-      playbackState = new TabMediaPlaybackState(
-        PlaybackStateSource.MediaElement,
-        Math.floor(this.currentMediaElement.currentTime * 1000),
-        Math.floor(this.currentMediaElement.duration * 1000),
-        isPlaying,
-        Date.now()
-      );
-    }
     else if (this.useEstimatedTrackStartTime) {
       playbackState = this.#estimatedPlaybackPosition(isPlaying);
     }
