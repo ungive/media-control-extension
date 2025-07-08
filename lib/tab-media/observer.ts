@@ -507,7 +507,9 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     // We have to prioritize the media element here because on e.g. YouTube
     // the progress element is not updated when it is not visible,
     // which is the case most of the time.
-    if (this.currentMediaElement) {
+    if (this.currentMediaElement &&
+      !isNaN(this.currentMediaElement.currentTime) &&
+      !isNaN(this.currentMediaElement.duration)) {
       playbackState = new TabMediaPlaybackState(
         PlaybackStateSource.MediaElement,
         Math.floor(this.currentMediaElement.currentTime * 1000),
