@@ -4,6 +4,7 @@ import { CurrentMediaPayload, ExtensionMessage, PopoutStatePaylaod, PopupMessage
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon } from '@heroicons/vue/16/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
+import { Icon } from '@iconify/vue';
 import { computed, onMounted, ref } from 'vue';
 import { browser } from 'wxt/browser';
 import OverflowingText from './OverflowingText.vue';
@@ -191,10 +192,15 @@ function openPopout() {
       <h4 class="flex-1 text-base font-bold leading-none text-gray-900 dark:text-gray-200">
         Media Control
       </h4>
-      <div class="flex-shrink-0">
-        <a @click="openPopout" title="Popout window" target="_blank"
-          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 group-hover:opacity-100 transition-all duration-150">
-          <Square2StackIcon class="size-4 mt-1"></Square2StackIcon>
+      <div class="flex-shrink-0 flex items-center space-x-2">
+        <a @click="openPopout" title="Popout window"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-150">
+          <Square2StackIcon class="size-[1.125rem]"></Square2StackIcon>
+        </a>
+        <a href="https://github.com/ungive/media-control-extension" target="_blank" rel="noopener noreferrer"
+          title="View source code"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-150">
+          <Icon icon="mdi:github" class="size-[1.25rem]" />
         </a>
       </div>
     </div>
