@@ -87,12 +87,21 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
 });
 
 function onMediaUpdated(state: BrowserMedia.MediaState | null) {
+  // TODO Do we need this check?
+  // || lastInteractedMediaElement !== null
+  const hasMediaElement = mediaObserver?.mediaElement !== null
   browser.runtime.sendMessage({
     type: TabMessage.MediaChanged,
     payload: {
       stateJson: state ? BrowserMedia.MediaState.toJSON(state) as object : null,
-      hasControls: mediaObserver?.mediaElement !== null
-        || lastInteractedMediaElement !== null
+      controls: {
+        playPause: hasMediaElement,
+        seekStart: hasMediaElement,
+        skip: mediaObserver?.mediaElement !== null &&
+          mediaObserver?.mediaElement.duration !== undefined &&
+          !isNaN(mediaObserver?.mediaElement.duration) &&
+          isFinite(mediaObserver?.mediaElement.duration)
+      }
     } as MediaChangedPayload,
   } as RuntimeMessage);
 }

@@ -1,4 +1,4 @@
-import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, PopoutMessage, PopoutStatePaylaod as PopoutStatePayload, PopupMessage, RuntimeMessage, TabMessage, WindowSizePayload } from "@/lib/messages";
+import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, MediaControlCapabilities, PopoutMessage, PopoutStatePaylaod as PopoutStatePayload, PopupMessage, RuntimeMessage, TabMessage, WindowSizePayload } from "@/lib/messages";
 import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
 import { Browser } from "wxt/browser";
@@ -7,7 +7,7 @@ type TabId = number;
 const tabs: Map<TabId, {
   reverseDomain: string
   state: BrowserMedia.MediaState | null
-  hasControls: boolean
+  controls: MediaControlCapabilities
 } | null> = new Map();
 
 let connectedPopups = 0;
@@ -41,7 +41,7 @@ async function sendTabMedia() {
       currentMediaPayload.media.push({
         tabId,
         stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
-        hasControls: media.hasControls
+        controls: media.controls
       });
     }
   }
@@ -54,7 +54,7 @@ async function sendTabMedia() {
 async function handleTabMedia(
   tabId: number,
   state: Proto.BrowserMedia.MediaState | null,
-  hasControls: boolean
+  controls: MediaControlCapabilities | null = null
 ) {
   if (!tabs.has(tabId)) {
     return; // This tab is not registered
@@ -64,12 +64,16 @@ async function handleTabMedia(
     console.assert(false, "There is no previous state");
     return;
   }
-  if (state == null) {
+  if (state === null) {
     if (currentState === null) {
       return; // Nothing has changed
     }
     // Don't overwrite the reverse domain for the tab
     currentState.state = null;
+  }
+  else if (controls === null) {
+    console.error("State and controls must both be non-null")
+    return;
   }
   else {
     if (state.source === undefined) {
@@ -79,7 +83,7 @@ async function handleTabMedia(
     currentState = {
       reverseDomain: state.source?.reverseDomain,
       state: state,
-      hasControls
+      controls
     };
   }
   tabs.set(tabId, currentState);
@@ -109,7 +113,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
           mediaChangedPayload.stateJson
             ? BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson)
             : null,
-          mediaChangedPayload.hasControls
+          mediaChangedPayload.controls
         );
       }
       break;
@@ -174,7 +178,7 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
       type: ExtensionMessage.CancelMediaUpdates
     } as RuntimeMessage);
   }
-  handleTabMedia(tabId, null, false);
+  handleTabMedia(tabId, null);
   tabs.delete(tabId);
 }
 

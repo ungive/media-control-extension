@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { isPopout } from '@/entrypoints/popup/popout';
-import { CurrentMediaPayload, ExtensionMessage, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
+import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon } from '@heroicons/vue/16/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
@@ -14,7 +14,7 @@ import TextWithLinks from './TextWithLinks.vue';
 const items = ref<{
   tabId: number
   state: BrowserMedia.MediaState
-  hasControls: boolean
+  controls: MediaControlCapabilities
 }[]>([]);
 
 if (process.env.NODE_ENV === 'development') {
@@ -46,7 +46,7 @@ onMounted(() => {
         items.value = currentMediaPayload.media.map(m => ({
           tabId: m.tabId,
           state: BrowserMedia.MediaState.fromJSON(m.stateJson),
-          hasControls: m.hasControls
+          controls: m.controls
         })).sort((a, b) => {
           if (a.state.playbackState?.positionTimestamp && !b.state.playbackState?.positionTimestamp) {
             return -1
@@ -260,15 +260,16 @@ function openPopout() {
                     :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
                 </div>
                 <div class="flex items-center mt-1 cursor-default select-none" v-if="item.state.source">
-                  <div class="flex-shrink-0 flex"
-                    :class="[item.hasControls ? '' : 'opacity-40 cursor-default pointer-events-none']">
-                    <div class="flex-shrink-0 -ms-0.5">
+                  <div class="flex-shrink-0 flex">
+                    <div class="flex-shrink-0 -ms-0.5"
+                      :class="[item.controls.seekStart ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="seekStart(item.tabId)" title="Replay this track"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                         <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
                       </a>
                     </div>
-                    <div class="flex-shrink-0 ms-2">
+                    <div class="flex-shrink-0 ms-2"
+                      :class="[item.controls.playPause ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                         <PauseIcon class="size-4 mt-1"></PauseIcon>
@@ -278,7 +279,8 @@ function openPopout() {
                         <PlayIcon class="size-4 mt-1"></PlayIcon>
                       </a>
                     </div>
-                    <div class="flex-shrink-0 ms-2">
+                    <div class="flex-shrink-0 ms-2"
+                      :class="[item.controls.skip ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="nextTrack(item.tabId)" title="Next track"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                         <ForwardIcon class="size-4 mt-1"></ForwardIcon>

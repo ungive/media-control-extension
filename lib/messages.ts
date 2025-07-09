@@ -31,15 +31,21 @@ export interface RuntimeMessage {
   payload: any
 }
 
+export interface MediaControlCapabilities {
+  playPause: boolean
+  seekStart: boolean
+  skip: boolean
+}
+
 export interface MediaChangedPayload {
   stateJson: object | null
-  hasControls: boolean
+  controls: MediaControlCapabilities
 }
 
 export interface CurrentMediaElementPayload {
   tabId: number
   stateJson: object
-  hasControls: boolean
+  controls: MediaControlCapabilities
 }
 
 export interface CurrentMediaPayload {
