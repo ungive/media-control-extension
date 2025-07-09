@@ -310,6 +310,9 @@ export class PlaybackPositionProgressElementObserver
         lastValue *= state.progressElement.multiplier;
         positionDelta = newValue - lastValue;
         epsilon = Constants.PROGRESS_SECS_EPSILON;
+      } else {
+        console.assert(state.progressElement.valuePrecision
+          === ProgressElementPrecision.Milliseconds)
       }
 
       const difference = Math.abs(timeDeltaMillis - positionDelta);
