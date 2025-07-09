@@ -203,6 +203,7 @@ interface ProgressElementState {
 
 export type ElementMutationCallback<E> =
   (element: E, mutation: MutationRecord) => void;
+export type ElementMutationStoppedCallback<E> = (element: E) => void;
 
 export class PlaybackPositionProgressElementObserver
   implements IObserver<ElementMutationCallback<ProgressElement>> {
@@ -212,7 +213,9 @@ export class PlaybackPositionProgressElementObserver
   // private lastPlaybackPositionValueUpdate: number | null = null;
 
   private elementGroupObserver: ElementGroupObserver<ProgressElement, ElementMutationsCallback<ProgressElement>>
-  private eventCallbacks: ElementMutationCallback<ProgressElement>[] = []
+  private mutationCallbacks: ElementMutationCallback<ProgressElement>[] = []
+  private mutationStoppedCallbacks: ElementMutationStoppedCallback<ProgressElement>[] = []
+  private mutationStoppedTimeout: number | null = null
 
   constructor(
     elementSource: IElementSource<ProgressElement>
@@ -229,7 +232,37 @@ export class PlaybackPositionProgressElementObserver
   restart(): boolean { return this.elementGroupObserver.restart(); }
 
   addEventListener(callback: ElementMutationCallback<ProgressElement>): void {
-    this.eventCallbacks.push(callback);
+    this.addMutationListener(callback)
+  }
+
+  addMutationListener(callback: ElementMutationCallback<ProgressElement>): void {
+    this.mutationCallbacks.push(callback);
+  }
+
+  addMutationStoppedListener(callback: ElementMutationStoppedCallback<ProgressElement>): void {
+    this.mutationStoppedCallbacks.push(callback)
+  }
+
+  #mutationStoppedHandler(progressElement: ProgressElement) {
+    for (const callback of this.mutationStoppedCallbacks) {
+      callback(progressElement)
+    }
+  }
+
+  #updateMutationStoppedTimeout(progressElement: ProgressElement) {
+    if (progressElement.updateInterval === undefined) {
+      console.warn("Progress element has no update interval:", progressElement)
+      return
+    }
+    if (this.mutationStoppedTimeout !== null) {
+      clearTimeout(this.mutationStoppedTimeout)
+    }
+    const delta = progressElement.updateInterval
+    const timeoutDelta = delta + 2 * Constants.PROGRESS_MILLIS_EPSILON
+    this.mutationStoppedTimeout = window.setTimeout(() => {
+      this.mutationStoppedTimeout = null
+      this.#mutationStoppedHandler(progressElement)
+    }, timeoutDelta)
   }
 
   #onMutated(element: ProgressElement, mutations: MutationRecord[]) {
@@ -262,12 +295,16 @@ export class PlaybackPositionProgressElementObserver
       // We break the loop, since we don't need to send updates more than once
       // for the current set of mutations.
       if (this.currentPlaybackPositionProgressElement) {
+
+        // Set the mutation stop timeout.
+        this.#updateMutationStoppedTimeout(this.currentPlaybackPositionProgressElement);
+
         if (this.currentPlaybackPositionProgressElement.element === mutation.target) {
           if (mutation.attributeName == state.progressElement.valueAttribute) {
             // this.lastPlaybackPositionValueUpdate = nowTimestamp;
             // FIXME Shouldn't we only call the callback if the attributeName changed?
           }
-          for (const callback of this.eventCallbacks) {
+          for (const callback of this.mutationCallbacks) {
             callback(this.currentPlaybackPositionProgressElement, mutation);
           }
         }
@@ -314,6 +351,18 @@ export class PlaybackPositionProgressElementObserver
         console.assert(state.progressElement.valuePrecision
           === ProgressElementPrecision.Milliseconds)
       }
+      let updateIntervalMillis = positionDelta;
+      switch (state.progressElement.valuePrecision) {
+        case ProgressElementPrecision.Seconds:
+          updateIntervalMillis *= ProgressElementPrecision.Milliseconds;
+          break;
+        case ProgressElementPrecision.Milliseconds:
+          break;
+        default:
+          state.progressElement.valuePrecision satisfies never
+          break;
+      }
+      state.progressElement.updateInterval = updateIntervalMillis
 
       const difference = Math.abs(timeDeltaMillis - positionDelta);
       if (difference <= epsilon) {
@@ -383,6 +432,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   private progressElementObserver: PlaybackPositionProgressElementObserver;
   private currentMediaElement: HTMLMediaElement | null = null;
   private currentProgressElement: ProgressElement | null = null;
+  private currentProgressElementMutating: boolean | undefined = undefined;
   private useEstimatedTrackStartTime: boolean = true;
   private estimatedTrackStartTime: number | null = null
   private previousMediaState: TabMediaState | null = null
@@ -402,7 +452,9 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
       new TabProgressElementSource()
     );
     this.mediaElementObserver.addEventListener(this.#onMediaElementUpdated.bind(this))
-    this.progressElementObserver.addEventListener(this.#onProgressElementUpdated.bind(this))
+    this.progressElementObserver.addMutationListener(this.#onProgressElementMutated.bind(this))
+    this.progressElementObserver.addMutationStoppedListener(
+      this.#onProgressElementStoppedMutating.bind(this))
   }
 
   start(): boolean {
@@ -422,6 +474,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     this.progressElementObserver.stop();
     this.currentMediaElement = null;
     this.currentProgressElement = null;
+    this.currentProgressElementMutating = undefined;
     this.useEstimatedTrackStartTime = true;
     this.estimatedTrackStartTime = null;
     this.previousMediaState = null;
@@ -450,10 +503,20 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     this.#handleUpdate();
   }
 
-  #onProgressElementUpdated(element: ProgressElement) {
+  #onProgressElementMutated(element: ProgressElement) {
     this.currentProgressElement = element;
+    this.currentProgressElementMutating = true;
     this.useEstimatedTrackStartTime = false;
     this.#handleUpdate();
+  }
+
+  #onProgressElementStoppedMutating(element: ProgressElement) {
+    if (element === this.currentProgressElement) {
+      if (this.currentProgressElementMutating) {
+        this.currentProgressElementMutating = false;
+        this.#handleUpdate();
+      }
+    }
   }
 
   #handleUpdate() {
@@ -500,10 +563,20 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   }
 
   #currentMediaState(): TabMediaState | null {
-    const isPlaying = navigator.mediaSession.playbackState !== "paused"
+    let isPlaying = navigator.mediaSession.playbackState !== "paused"
       && (navigator.mediaSession.playbackState === "playing"
         || !this.currentMediaElement
         || !isMediaElementPaused(this.currentMediaElement));
+
+    // FIXME Do not assume it's playing by default. Use the progress element
+    // to determine whether the playback position is advancing or not.
+    // Only when it's been determined to advance, then it's playing.
+
+    // Do not report as playing when the progress element is not mutating.
+    if (isPlaying && navigator.mediaSession.playbackState !== "playing" &&
+      this.currentProgressElement !== null && !this.currentProgressElementMutating) {
+      isPlaying = false;
+    }
 
     let playbackState: TabMediaPlaybackState | null = null;
 

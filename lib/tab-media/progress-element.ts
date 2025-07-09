@@ -15,8 +15,10 @@ export class ProgressElement implements IProgressElement {
   private _maxAttribute: string
   private _valueAttribute: string
 
-  private _valuePrecision: ProgressElementPrecision
   private _targetPrecision: ProgressElementPrecision
+  private _valuePrecision: ProgressElementPrecision
+
+  private _updateIntervalMillis: number | undefined
 
   constructor(
     element: Element,
@@ -24,7 +26,8 @@ export class ProgressElement implements IProgressElement {
     maxAttribute: string,
     valueAttribute: string,
     targetPrecision = ProgressElementPrecision.Milliseconds,
-    valuePrecision = ProgressElementPrecision.Milliseconds
+    valuePrecision = ProgressElementPrecision.Milliseconds,
+    updateInterval = undefined,
   ) {
     this._element = element;
     this._minAttribute = minAttribute;
@@ -32,6 +35,7 @@ export class ProgressElement implements IProgressElement {
     this._valueAttribute = valueAttribute;
     this._targetPrecision = targetPrecision;
     this._valuePrecision = valuePrecision;
+    this._updateIntervalMillis = updateInterval;
   }
 
   get element(): Element { return this._element; }
@@ -47,11 +51,14 @@ export class ProgressElement implements IProgressElement {
   get maxAttribute(): string { return this._maxAttribute; }
   get valueAttribute(): string { return this._valueAttribute; }
 
+  get targetPrecision(): ProgressElementPrecision { return this._targetPrecision; }
+  set targetPrecision(value: ProgressElementPrecision) { this._targetPrecision = value; }
+
   get valuePrecision(): ProgressElementPrecision { return this._valuePrecision; }
   set valuePrecision(value: ProgressElementPrecision) { this._valuePrecision = value; }
 
-  get targetPrecision(): ProgressElementPrecision { return this._targetPrecision; }
-  set targetPrecision(value: ProgressElementPrecision) { this._targetPrecision = value; }
+  get updateInterval(): number | undefined { return this._updateIntervalMillis; }
+  set updateInterval(millis: number | undefined) { this._updateIntervalMillis = millis; }
 
   get multiplier(): number { return this._targetPrecision / this._valuePrecision; }
 
