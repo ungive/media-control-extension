@@ -214,7 +214,7 @@ function openPopout() {
         </a>
       </div>
     </div>
-    <div class="flow-root min-w-120 max-w-120">
+    <div class="flow-root min-w-[28rem] max-w-[30rem]">
       <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
         <template v-for="item in computedItems">
           <li class="py-3 group" v-if="item.state.metadata" :key="item.tabId">

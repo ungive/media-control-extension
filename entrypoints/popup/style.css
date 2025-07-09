@@ -5,11 +5,16 @@
 
 html.popout body {
   /* Required for the popout to not show */
-  overflow: hidden;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 
   /* Required for automatic popout resizing */
   height: 100vh;
-  width: 100vw;
+}
+
+html:not(.popout) body {
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 a {
