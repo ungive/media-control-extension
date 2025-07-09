@@ -65,6 +65,14 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
     case PopupMessage.NextTrack: {
       const mediaElement = mediaObserver.mediaElement;
       if (mediaElement !== null) {
+        if (isNaN(mediaElement.duration)) {
+          console.error("Cannot skip to the next track: The duration is not a number");
+          break;
+        }
+        if (!isFinite(mediaElement.duration)) {
+          console.error("Cannot skip to the next track: The duration is not finite");
+          break;
+        }
         if (mediaElement.paused) {
           mediaElement.play();
         }
