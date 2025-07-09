@@ -135,7 +135,9 @@ export class TabMediaState implements ITabMediaState {
         artist: this.mediaMetadata.artist.length > 0 ? this.mediaMetadata.artist : undefined,
         album: this.mediaMetadata.album.length > 0 ? this.mediaMetadata.album : undefined,
         duration: this.playbackState.duration ? this.playbackState.duration / 1000 : undefined
-      } : undefined,
+      } : (document.title.length > 0 ? {
+        title: document.title
+      } : undefined),
       playbackState: {
         position: this.playbackState.position / 1000,
         positionTimestamp: new Date(this.playbackState.positionTimestamp),
