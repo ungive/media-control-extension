@@ -231,11 +231,16 @@ function openPopout() {
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
                 <div class="flex-grow -translate-y-0.5">
                   <div class="flex cursor-default">
-                    <OverflowingText :key="item.state.metadata.title">
+                    <OverflowingText
+                      v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
+                      :key="item.state.metadata.title">
                       <a @click="showTab(item.tabId)" :title="item.state.metadata.title"
                         class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
+                    <a v-else @click="showTab(item.tabId)" :title="item.state.metadata.title"
+                      class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5">{{
+                        item.state.metadata.title }}</a>
                   </div>
                   <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
                     <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
