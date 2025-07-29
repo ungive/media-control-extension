@@ -35,7 +35,7 @@ You can also create a pop-out window to continuously observe media.
 
 ```sh
 $ git clone https://github.com/ungive/media-control-extension
-$ cde media-control-extension
+$ cd media-control-extension
 $ pnpm install
 $ pnpm dev:firefox
 $ pnpn dev  # Chrome
