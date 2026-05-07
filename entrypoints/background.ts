@@ -52,12 +52,13 @@ async function updateTabMedia() {
   }
 
   // Update the counter value on the extension icon.
+  const browserAction = browser.action ?? browser.browserAction;
   if (currentMediaCount > 0) {
     const text = currentMediaCount > 9 ? '9+' : String(currentMediaCount);
-    browser.action.setBadgeBackgroundColor({ color: '#222' });
-    browser.action.setBadgeText({ text });
+    browserAction.setBadgeBackgroundColor({ color: '#222' });
+    browserAction.setBadgeText({ text });
   } else {
-    browser.action.setBadgeText({
+    browserAction.setBadgeText({
       text: undefined,
     });
   }
