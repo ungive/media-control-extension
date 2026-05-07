@@ -265,25 +265,25 @@ function openPopout() {
                       :class="[item.controls.seekStart ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="seekStart(item.tabId)" title="Replay this track"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <ArrowUturnLeftIcon class="size-4 mt-1"></ArrowUturnLeftIcon>
+                        <ArrowUturnLeftIcon class="size-4 mt-0.5"></ArrowUturnLeftIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.playPause ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <PauseIcon class="size-4 mt-1"></PauseIcon>
+                        <PauseIcon class="size-4 mt-0.5"></PauseIcon>
                       </a>
                       <a v-else @click="playMedia(item.tabId)" title="Play"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <PlayIcon class="size-4 mt-1"></PlayIcon>
+                        <PlayIcon class="size-4 mt-0.5"></PlayIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.skip ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="nextTrack(item.tabId)" title="Next track"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <ForwardIcon class="size-4 mt-1"></ForwardIcon>
+                        <ForwardIcon class="size-4 mt-0.5"></ForwardIcon>
                       </a>
                     </div>
                   </div>
@@ -295,14 +295,14 @@ function openPopout() {
                     <div v-if="shareLink" class="flex-shrink-0">
                       <a :href="shareLink" target="_blank" title="Share"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <ShareIcon class="size-4 mt-1"></ShareIcon>
+                        <ShareIcon class="size-4 mt-0.5"></ShareIcon>
                       </a>
                     </div>
                   </template>
                   <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
                     <a :href="getHomepage(item.state.source.siteUrl)"
                       :title="'Open ' + getHostname(item.state.source.siteUrl)" target="_blank">
-                      <img class="w-4 h-4 mt-1 rounded-md object-cover object-center"
+                      <img class="w-4 h-4 mt-0.5 rounded-md object-cover object-center"
                         :src="item.state.source?.faviconUrl" alt="Favicon">
                     </a>
                   </div>
