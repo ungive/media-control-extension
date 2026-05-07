@@ -31,24 +31,44 @@ function tabMediaStateToString(state: Proto.BrowserMedia.MediaState): string {
     + "]";
 }
 
-async function sendTabMedia() {
-  if (connectedPopups === 0) {
-    return; // No popups opened
-  }
+async function updateTabMedia() {
+  let hasExtensionPopup: boolean = connectedPopups > 0
+
+  // Count how many tabs are playing media and collect the metadata, if there
+  // is any extension popup that could display that data.
+  let currentMediaCount: number = 0
   const currentMediaPayload: CurrentMediaPayload = { media: [] }
   for (const [tabId, media] of tabs) {
     if (media?.state) {
-      currentMediaPayload.media.push({
-        tabId,
-        stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
-        controls: media.controls
-      });
+      currentMediaCount += 1;
+      if (hasExtensionPopup) {
+        currentMediaPayload.media.push({
+          tabId,
+          stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
+          controls: media.controls
+        });
+      }
     }
   }
-  await browser.runtime.sendMessage({
-    type: ExtensionMessage.CurrentMedia,
-    payload: currentMediaPayload
-  } as RuntimeMessage);
+
+  // Update the counter value on the extension icon.
+  if (currentMediaCount > 0) {
+    const text = currentMediaCount > 9 ? '9+' : String(currentMediaCount);
+    browser.action.setBadgeBackgroundColor({ color: '#222' });
+    browser.action.setBadgeText({ text });
+  } else {
+    browser.action.setBadgeText({
+      text: undefined,
+    });
+  }
+
+  // Update the extension popup, if there is any.
+  if (hasExtensionPopup) {
+    await browser.runtime.sendMessage({
+      type: ExtensionMessage.CurrentMedia,
+      payload: currentMediaPayload
+    } as RuntimeMessage);
+  }
 }
 
 async function handleTabMedia(
@@ -89,7 +109,7 @@ async function handleTabMedia(
   tabs.set(tabId, currentState);
 
   // Inform open popup views about current media.
-  sendTabMedia();
+  updateTabMedia();
 
   // logging
   const ts = new Date(Date.now()).toISOString();
@@ -119,7 +139,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
       break;
     // The popup requests currently playing media
     case PopupMessage.GetCurrentMedia:
-      sendTabMedia();
+      updateTabMedia();
       break;
     // The popout reports its desired window size
     case PopoutMessage.WindowSize:
