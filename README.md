@@ -43,6 +43,6 @@ $ pnpn dev  # Chrome
 
 ## Copyright
 
-Copyright (c) 2025 Jonas van den Berg  
+Copyright (c) 2025-2026 Jonas van den Berg  
 This code is source-available only at this time, until it is published.  
 All rights reserved.
