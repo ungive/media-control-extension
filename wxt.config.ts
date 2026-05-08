@@ -27,9 +27,11 @@ export default defineConfig({
     ],
     browser_specific_settings: {
       gecko: {
+        id: "media-control-extension@jonasvandenberg.net",
         data_collection_permissions: {
-          required: ['none'],
-          optional: []
+          required: [
+            'none'
+          ]
         }
       }
     }
