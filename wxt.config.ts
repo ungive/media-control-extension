@@ -22,6 +22,14 @@ export default defineConfig({
         resources: ['inject.js'],
         matches: ['*://*/*']
       }
-    ]
+    ],
+    browser_specific_settings: {
+      gecko: {
+        data_collection_permissions: {
+          required: ['none'],
+          optional: []
+        }
+      }
+    }
   }
 });
