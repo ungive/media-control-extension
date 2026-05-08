@@ -67,7 +67,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN apt-get update \
 	&& apt-get upgrade -y \
 	&& apt-get install -y software-properties-common \
-	&& apt-get install -y openssh-server wget git zsh
+	&& apt-get install -y openssh-server wget git zsh graphicsmagick
 RUN touch "/root/.hushlogin"
 RUN userdel -f node &&\
 	if getent group node; then groupdel node; fi &&\

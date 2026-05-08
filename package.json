@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "icons": "icon-gen -i icon.png -o public/icon -r --favicon --favicon-name=icon- --favicon-png-sizes 16,24,32,48,64,96,128,256",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@types/deep-equal": "^1.0.4",
     "autoprefixer": "^10.4.20",
+    "icon-gen": "^5.0.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "ts-proto": "^1.181.2",
