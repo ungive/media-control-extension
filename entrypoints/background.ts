@@ -51,17 +51,17 @@ async function updateTabMedia() {
     }
   }
 
-  // Update the counter value on the extension icon.
-  const browserAction = browser.action ?? browser.browserAction;
-  if (currentMediaCount > 0) {
-    const text = currentMediaCount > 9 ? '9+' : String(currentMediaCount);
-    browserAction.setBadgeBackgroundColor({ color: '#222' });
-    browserAction.setBadgeText({ text });
-  } else {
-    browserAction.setBadgeText({
-      text: undefined,
-    });
-  }
+  // // Update the counter value on the extension icon.
+  // const browserAction = browser.action ?? browser.browserAction;
+  // if (currentMediaCount > 0) {
+  //   const text = currentMediaCount > 9 ? '9+' : String(currentMediaCount);
+  //   browserAction.setBadgeBackgroundColor({ color: '#222' });
+  //   browserAction.setBadgeText({ text });
+  // } else {
+  //   browserAction.setBadgeText({
+  //     text: undefined,
+  //   });
+  // }
 
   // Update the extension popup, if there is any.
   if (hasExtensionPopup) {
