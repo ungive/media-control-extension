@@ -30,9 +30,13 @@ const props = defineProps({
     type: Number,
     default: 0.45
   },
-  pauseDurationStart: {
+  pauseDurationLoad: {
     type: Number,
     default: 4000
+  },
+  pauseDurationStart: {
+    type: Number,
+    default: 3000
   },
   pauseDurationEnd: {
     type: Number,
@@ -70,7 +74,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 const scrollLoop = async () => {
   if (!isOverflowing.value) return
 
-  await wait(props.pauseDurationStart)
+  await wait(props.pauseDurationLoad)
 
   while (true) {
     if (isHovered || isScrollPausedAfterHover.value) {
