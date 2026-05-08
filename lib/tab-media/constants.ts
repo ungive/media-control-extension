@@ -30,6 +30,11 @@ export namespace Constants {
       album: new RegExp('/album/'),
       artist: new RegExp('/artist/')
     },
+    'com.tidal.stage': {
+      track: new RegExp('/track/'),
+      album: new RegExp('/album/'),
+      artist: new RegExp('/artist/')
+    },
     'com.spotify.open': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
