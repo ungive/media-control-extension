@@ -17,6 +17,8 @@ stats-*.json
 .wxt*
 web-ext.config.ts
 
+public/icon/favicon.ico
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
