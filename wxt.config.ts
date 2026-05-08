@@ -6,6 +6,7 @@ export default defineConfig({
     "@wxt-dev/module-vue",
   ],
   manifest: {
+    name: "Media Control",
     permissions: ['tabs'],
     icons: {
       16: '/icon/icon-16.png',
