@@ -309,8 +309,12 @@ async function createPopout() {
     width: 528,
     height: 100,
   });
-  popoutWindowId = popup.id;
-  onPopoutOpened()
+  if (popup !== undefined) {
+    popoutWindowId = popup.id;
+    onPopoutOpened();
+  } else {
+    console.error("failed to open popout window");
+  }
 }
 
 async function focusPopout() {
