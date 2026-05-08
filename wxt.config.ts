@@ -7,6 +7,8 @@ export default defineConfig({
   ],
   manifest: {
     name: "Media Control",
+    description: "View and control all media that is playing in your browser.",
+    homepage_url: "https://github.com/ungive/media-control-extension",
     permissions: ['tabs'],
     icons: {
       16: '/icon/icon-16.png',
