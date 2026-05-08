@@ -222,6 +222,7 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status) {
     if (changeInfo.status === 'complete') {
       completedTabs.add(tabId);
+      registerTab(tab);
     } else if (completedTabs.has(tabId)) {
       // Only unregister the tab when it is in loading state
       // and it has has completely loaded once before.
