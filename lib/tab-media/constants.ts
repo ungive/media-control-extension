@@ -25,7 +25,7 @@ export namespace Constants {
       album: new RegExp('/albums/'),
       artist: new RegExp('/artists/')
     },
-    'com.tidal.listen': {
+    'com.tidal': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
       artist: new RegExp('/artist/')
