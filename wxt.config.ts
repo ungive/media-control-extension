@@ -31,5 +31,13 @@ export default defineConfig({
         }
       }
     }
+  },
+  zip: {
+    excludeSources: [
+      "README.md"
+    ],
+    includeSources: [
+      "SOURCE_CODE_REVIEW.md"
+    ]
   }
 });
