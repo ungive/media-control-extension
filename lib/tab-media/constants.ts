@@ -24,44 +24,47 @@ export namespace Constants {
   export const URL_MATCHES: {
     [key: string]: ResourceLinkPatterns
   } = {
-    // FIXME other Amazon Music domains are missing
+    // FIXME The patterns aren't anchored at the root of the URL.
+    // FIXME Other Amazon Music domains are missing.
     'de.amazon.music': {
       track: undefined,
       album: new RegExp('/albums/'),
-      artist: new RegExp('/artists/')
+      artist: new RegExp('/artists/'),
+    },
+    'com.apple.music': {
+      track: undefined,
+      album: new RegExp('(?:/[^\\/]+)?/album/'),
+      artist: new RegExp('(?:/[^\\/]+)?/artist/'),
     },
     'com.tidal': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
-      artist: new RegExp('/artist/')
+      artist: new RegExp('/artist/'),
     },
     'com.tidal.stage': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
-      artist: new RegExp('/artist/')
+      artist: new RegExp('/artist/'),
     },
     'com.spotify.open': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
       artist: new RegExp('/artist/'),
-      // track: undefined,
-      // album: undefined,
-      // artist: undefined
     },
     'com.youtube.music': {
       track: new RegExp('/watch'),
       album: new RegExp('/browse/'),
-      artist: new RegExp('/channel/')
+      artist: new RegExp('/channel/'),
     },
     'com.youtube': {
       track: new RegExp('/watch'),
       album: undefined,
-      artist: new RegExp('/channel/')
+      artist: new RegExp('/channel/'),
     },
     'com.deezer': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
-      artist: new RegExp('/artist/')
+      artist: new RegExp('/artist/'),
     },
     'com.bandcamp': {
       track: undefined,
