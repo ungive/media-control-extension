@@ -2,7 +2,7 @@
 import { devBannerHidden } from '@/lib/util/storage';
 import { EyeSlashIcon } from '@heroicons/vue/16/solid';
 
-const hidden = ref(false);
+const hidden = ref(true);
 
 onMounted(async () => {
   hidden.value = await devBannerHidden.getValue()
