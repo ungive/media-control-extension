@@ -9,7 +9,10 @@ export default defineConfig({
     name: "Media Control",
     description: "View and control all media that is playing in your browser.",
     homepage_url: "https://github.com/ungive/media-control-extension",
-    permissions: ['tabs'],
+    permissions: [
+      'tabs',
+      'storage',
+    ],
     icons: {
       16: '/icon/icon-16.png',
       24: '/icon/icon-24.png',

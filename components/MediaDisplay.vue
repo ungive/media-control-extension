@@ -3,6 +3,7 @@ import { isPopout } from '@/entrypoints/popup/popout';
 import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon } from '@heroicons/vue/16/solid';
+import { InformationCircleIcon } from '@heroicons/vue/20/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
 import { Icon } from '@iconify/vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -10,6 +11,8 @@ import { browser } from 'wxt/browser';
 import OverflowingText from './OverflowingText.vue';
 import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
+import DevBanner from './DevBanner.vue';
+import { devBannerHidden } from '@/lib/util/storage';
 
 const items = ref<{
   tabId: number
@@ -194,6 +197,21 @@ function openPopout() {
     type: PopupMessage.OpenPopout
   } as RuntimeMessage);
 }
+
+const devBannerHiddenState = ref(false)
+
+onMounted(async () => {
+  devBannerHiddenState.value = await devBannerHidden.getValue()
+})
+
+async function showDevBanner() {
+  devBannerHiddenState.value = false
+  await devBannerHidden.setValue(false)
+}
+
+devBannerHidden.watch((value) => {
+  devBannerHiddenState.value = value;
+});
 </script>
 
 <template>
@@ -203,6 +221,10 @@ function openPopout() {
         Media Control
       </h4>
       <div class="flex-shrink-0 flex items-center space-x-2">
+        <a v-if="devBannerHiddenState" @click="showDevBanner" title="Show information banner"
+          class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
+          <InformationCircleIcon class="size-[1.125rem]"></InformationCircleIcon>
+        </a>
         <a @click="openPopout" title="Popout window"
           class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
           <Square2StackIcon class="size-[1.125rem]"></Square2StackIcon>
@@ -313,5 +335,6 @@ function openPopout() {
         </template>
       </ul>
     </div>
+    <DevBanner />
   </div>
 </template>
