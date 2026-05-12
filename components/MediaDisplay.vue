@@ -286,25 +286,25 @@ devBannerHidden.watch((value) => {
                     <div class="flex-shrink-0 -ms-0.5"
                       :class="[item.controls.seekStart ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="seekStart(item.tabId)" title="Replay this track"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <ArrowUturnLeftIcon class="size-4 mt-0.5"></ArrowUturnLeftIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.playPause ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <PauseIcon class="size-4 mt-0.5"></PauseIcon>
                       </a>
                       <a v-else @click="playMedia(item.tabId)" title="Play"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <PlayIcon class="size-4 mt-0.5"></PlayIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.skip ? '' : 'opacity-40 cursor-default pointer-events-none']">
                       <a @click="nextTrack(item.tabId)" title="Next track"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <ForwardIcon class="size-4 mt-0.5"></ForwardIcon>
                       </a>
                     </div>
