@@ -12,6 +12,7 @@ export default defineConfig({
     permissions: [
       'tabs',
       'storage',
+      'webNavigation',
     ],
     icons: {
       16: '/icon/icon-16.png',

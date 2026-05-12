@@ -182,11 +182,13 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
 }
 
-browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Any loading tab most likely will stop playing media.
-  if (changeInfo.status === 'loading') {
-    unregisterTab(tabId);
+browser.webNavigation.onCommitted.addListener((details) => {
+  // Ignore navigation in iframes for now.
+  if (details.frameId !== 0) {
+    return;
   }
+  // Navigating to a new page document causes media to stop playing.
+  unregisterTab(details.tabId);
 });
 
 browser.tabs.onRemoved.addListener(async (tabId) => {
