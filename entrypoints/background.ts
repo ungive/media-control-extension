@@ -182,11 +182,11 @@ async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   tabs.delete(tabId);
 }
 
-// const completedTabs = new Set<number>();
-
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // FIXME Navigating to a different page does not unload the media
-  // FIXME Reloading the page completely does not unload the media
+  // Any loading tab most likely will stop playing media.
+  if (changeInfo.status === 'loading') {
+    unregisterTab(tabId);
+  }
 });
 
 browser.tabs.onRemoved.addListener(async (tabId) => {
