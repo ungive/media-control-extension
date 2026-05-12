@@ -78,7 +78,7 @@ async function handleTabMedia(
   controls: MediaControlCapabilities | null = null
 ) {
   if (!tabs.has(tabId)) {
-    return; // This tab is not registered
+    tabs.set(tabId, null);
   }
   let currentState = tabs.get(tabId);
   if (currentState === undefined) {
@@ -174,66 +174,23 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
   }
 });
 
-async function registerTab(tab: Browser.tabs.Tab) {
-  if (!tab.id) {
-    return console.error('failed to register tab without an id');
-  }
-  if (tabs.has(tab.id)) {
-    return; // Already registered.
-  }
-  if (!tab.url) {
-    return console.error('failed to register tab without a url');
-  }
-  tabs.set(tab.id, null);
-  browser.tabs.sendMessage(tab.id, {
-    type: ExtensionMessage.SendMediaUpdates
-  } as RuntimeMessage);
-}
-
 async function unregisterTab(tabId: number, sendCancel: boolean = true) {
   if (!tabs.has(tabId)) {
     return; // Not registered.
-  }
-  if (sendCancel) {
-    browser.tabs.sendMessage(tabId, {
-      type: ExtensionMessage.CancelMediaUpdates
-    } as RuntimeMessage);
   }
   handleTabMedia(tabId, null);
   tabs.delete(tabId);
 }
 
-async function onTabAudible(tab: Browser.tabs.Tab) {
-  registerTab(tab);
-}
-
-const completedTabs = new Set<number>();
+// const completedTabs = new Set<number>();
 
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (tabId !== tab.id) {
-    return;
-  }
-  if (changeInfo.discarded === true) {
-    return unregisterTab(tabId);
-  }
-  if (changeInfo.audible !== undefined && changeInfo.audible) {
-    return onTabAudible(tab);
-  }
-  if (changeInfo.status) {
-    if (changeInfo.status === 'complete') {
-      completedTabs.add(tabId);
-    } else if (!tab.audible && completedTabs.has(tabId)) {
-      // Only unregister the tab when it is in loading state
-      // and it has has completely loaded once before.
-      completedTabs.delete(tabId);
-      unregisterTab(tabId);
-    }
-  }
+  // FIXME Navigating to a different page does not unload the media
+  // FIXME Reloading the page completely does not unload the media
 });
 
 browser.tabs.onRemoved.addListener(async (tabId) => {
   unregisterTab(tabId);
-  completedTabs.delete(tabId);
 });
 
 browser.runtime.onSuspend.addListener(async () => {
@@ -242,13 +199,6 @@ browser.runtime.onSuspend.addListener(async () => {
 });
 
 async function init() {
-  for (const tab of await browser.tabs.query({})) {
-    if (tab.id !== undefined && tab.audible !== undefined && tab.audible) {
-      onTabAudible(tab);
-    }
-  }
-  // console.log(BrowserType[Util.getCurrentBrowser()]);
-
   // Observe and listen for popups that connect/disconnect i.e. open/close.
   browser.runtime.onConnect.addListener(port => {
     connectedPopups += 1;

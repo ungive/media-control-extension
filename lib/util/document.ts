@@ -1,3 +1,5 @@
+import { ReverseDomain } from "./reverse-domain";
+
 /**
  * Checks whether a media element is considered paused.
  *
@@ -40,4 +42,22 @@ export function getFaviconUrl(): URL | null {
   if (png !== null)
     return png;
   return null;
+}
+
+/**
+ * Returns the URL of the page.
+ * 
+ * @returns The URL of the page.
+ */
+export function getPageUrl(): URL {
+  return new URL(window.location.href);
+}
+
+/**
+ * Returns the reverse domain of the page.
+ * 
+ * @returns The reverse domain of the page.
+ */
+export function getReverseDomain(): string {
+  return ReverseDomain.forUrl(getPageUrl());
 }

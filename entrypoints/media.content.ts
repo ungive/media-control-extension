@@ -11,14 +11,6 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
     return;
   }
   switch (message.type) {
-    case ExtensionMessage.SendMediaUpdates:
-      lastInteractedMediaElement = null;
-      mediaObserver.restart();
-      break;
-    case ExtensionMessage.CancelMediaUpdates:
-      mediaObserver.stop();
-      lastInteractedMediaElement = null;
-      break;
     case PopupMessage.PauseMedia: {
       const mediaElement = mediaObserver.mediaElement;
       if (mediaElement !== null && !mediaElement.paused) {
@@ -116,10 +108,12 @@ function init() {
   injectAudioHook();
   mediaObserver = new TabMediaObserver();
   mediaObserver.addEventListener(onMediaUpdated);
+  mediaObserver.start();
 }
 
 export default defineContentScript({
   matches: ['<all_urls>'],
+  runAt: "document_end",
   main() {
     init();
   },

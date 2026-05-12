@@ -1,8 +1,7 @@
-import { ReverseDomain } from "@/lib/util/reverse-domain";
 import { BrowserMedia } from "../proto";
-import { getFaviconUrl, isMediaElementPaused } from "../util/document";
+import { getFaviconUrl, getPageUrl, getReverseDomain, isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
-import { ElementSourceObserver, IElementSource, TabMediaElementSource, TabProgressElementSource } from "./element-source";
+import { ElementSourceObserver, ExcludeElementFilter, IElementFilter, IElementSource, MediaElementFilter, MediaElementFilterOptions, MediaElementSource, MultiElementFilter, TabProgressElementSource } from "./element-source";
 import { ProgressElement, ProgressElementPrecision } from "./progress-element";
 import { findBestMatchingResourceLinks, ResourceLinkPatterns, ResourceType } from "./resource-links";
 import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
@@ -426,6 +425,9 @@ export type TabMediaStateCallback = (state: BrowserMedia.MediaState | null) => v
 
 export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
+  // TODO Observe "navigator.mediaSession.metadata" as well, since it can
+  // contain information before any media is playing on the site.
+
   private observerState: TabMediaObserverState = TabMediaObserverState.Idle
 
   private mediaElementObserver: MediaElementObserver;
@@ -441,9 +443,28 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
   private eventCallbacks: (TabMediaStateCallback)[] = []
 
+  static createMediaElementFilter(
+    options: MediaElementFilterOptions
+  ): IElementFilter<HTMLMediaElement> {
+    const filters: IElementFilter<HTMLElement>[] = [
+      new MediaElementFilter(options),
+    ];
+    const reverseDomain = getReverseDomain();
+    if (reverseDomain in Constants.IGNORE_MEDIA_ELEMENT_SELECTORS) {
+      filters.push(new ExcludeElementFilter(
+        Constants.IGNORE_MEDIA_ELEMENT_SELECTORS[reverseDomain]));
+    }
+    return new MultiElementFilter(filters);
+  }
+
   constructor() {
     this.mediaElementObserver = new ElementGroupObserver(
-      new TabMediaElementSource(),
+      new MediaElementSource(TabMediaObserver.createMediaElementFilter({
+        // FIXME Does this exclude e.g. Twitch streams?
+        requireDuration: true,
+        // We only start observing elements that are playing.
+        allowPaused: false,
+      })),
       new EventListenerObservationStrategy(
         ['play', 'pause', 'timeupdate', 'durationchange']
       )
@@ -498,8 +519,19 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
-    this.currentMediaElement = element;
-    this.useEstimatedTrackStartTime = false;
+    const filter = TabMediaObserver.createMediaElementFilter({
+      // FIXME Does this exclude e.g. Twitch streams?
+      requireDuration: true,
+      // Keep using the media element, even when it's paused.
+      allowPaused: true,
+    });
+    if (filter.test(element)) {
+      this.currentMediaElement = element;
+      this.useEstimatedTrackStartTime = false;
+    } else {
+      this.currentMediaElement = null;
+      this.useEstimatedTrackStartTime = true;
+    }
     this.#handleUpdate();
   }
 
@@ -542,10 +574,9 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
           });
         }
     }
-    const url = new URL(window.location.href);
-    const reverseDomain = ReverseDomain.forUrl(url);
+    const reverseDomain = getReverseDomain();
     const serialized = state.serialize(
-      url,
+      getPageUrl(),
       getFaviconUrl(),
       state.mediaMetadata
         ? findBestMatchingResourceLinks(

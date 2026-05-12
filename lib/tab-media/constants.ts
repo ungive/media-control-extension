@@ -15,11 +15,16 @@ export namespace Constants {
     [PlaybackStateSource.Estimated]: 250,
   };
 
+  // The target precision is always milliseconds.
+  // TODO Use generic precision enum type, not ProgressElementPrecision.
+  export const PLAYBACK_POSITION_PRECISION = ProgressElementPrecision.Milliseconds;
+
+  // FIXME Hardcode constants and per-site configuration in a separate place.
+
   export const URL_MATCHES: {
     [key: string]: ResourceLinkPatterns
   } = {
     // FIXME other Amazon Music domains are missing
-    // FIXME don't hardcode this here
     'de.amazon.music': {
       track: undefined,
       album: new RegExp('/albums/'),
@@ -65,7 +70,13 @@ export namespace Constants {
     }
   };
 
-  // The target precision is always milliseconds.
-  // TODO Use generic precision enum type, not ProgressElementPrecision.
-  export const PLAYBACK_POSITION_PRECISION = ProgressElementPrecision.Milliseconds;
+  // Media elements to ignore that mess with actually playing media.
+  export const IGNORE_MEDIA_ELEMENT_SELECTORS: {
+    [key: string]: string[]
+  } = {
+    'com.tidal': [
+      // Animated album covers.
+      'video[poster^="https://resources.tidal.com"]'
+    ]
+  };
 }

@@ -6,7 +6,33 @@ import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressE
  * Represents an arbitrary source for getting elements in the DOM.
  */
 export interface IElementSource<E> {
+
   get(): E[];
+}
+
+/**
+ * A filter for checking if a condition holds for a specific element.
+ */
+export interface IElementFilter<E> {
+
+  test(element: E): boolean;
+}
+
+/**
+ * An element filter for testing multiple filters on an element in order.
+ */
+export class MultiElementFilter<E> implements IElementFilter<E>{
+
+  constructor(private filters: IElementFilter<E>[]) { }
+
+  test(element: E): boolean {
+    for (const filter of this.filters) {
+      if (!filter.test(element)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 /**
@@ -90,28 +116,91 @@ export class TabProgressElementSource
 }
 
 /**
- * Observes media elements on the page.
+ * Conditions to filter media elements by.
  */
-export class TabMediaElementSource implements IElementSource<HTMLMediaElement> {
+export interface MediaElementFilterOptions {
+  requireDuration: boolean;
+  allowPaused: boolean;
+}
+
+/**
+ * Type for filtering out media elements for specific conditions.
+ */
+export class MediaElementFilter implements IElementFilter<HTMLMediaElement> {
+
+  constructor(private options: MediaElementFilterOptions = {
+    requireDuration: true,
+    allowPaused: true,
+  }) { }
+
+  test(element: HTMLMediaElement): boolean {
+    if (!(element instanceof HTMLAudioElement) && !(element instanceof HTMLVideoElement)) {
+      console.assert(false, "Unexpected media element type:", element.nodeName, element);
+      return false;
+    }
+    if (this.options.requireDuration) {
+      if (isNaN(element.duration) || element.duration <= 0) {
+        return false;
+      }
+    }
+    if (!this.options.allowPaused) {
+      if (isMediaElementPaused(element)) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+/**
+ * Type for filtering out elements that match one or more query selectors.
+ */
+export class ExcludeElementFilter implements IElementFilter<Element> {
+
+  constructor(private querySelectors: string[]) { }
+
+  test(element: Element): boolean {
+    if (element.parentNode === null) {
+      console.assert(false, "Element does not have a parent node");
+      return true;
+    }
+    for (const selector of this.querySelectors) {
+      if (element.parentNode.querySelector(selector) === element) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+/**
+ * Returns all media elements on the page.
+ */
+export class MediaElementSource implements IElementSource<HTMLMediaElement> {
+
+  constructor(
+    private filter: IElementFilter<HTMLMediaElement> = new MediaElementFilter(),
+    private source: ParentNode = document
+  ) { }
 
   get(): HTMLMediaElement[] {
-    // FIXME we are not considering playback rate here yet.
     const elements: HTMLMediaElement[] = [];
-    for (const audio of document.querySelectorAll('audio')) {
-      elements.push(audio);
+    for (const audio of this.source.querySelectorAll('audio')) {
+      if (audio instanceof HTMLAudioElement) {
+        elements.push(audio);
+      }
     }
-    // TIDAL uses "autoplay" for animated covers, this filters them out.
-    // It's probably safe to assume that music is never autoplayed like this.
-    for (const video of document.querySelectorAll('video:not([autoplay])')) {
+    for (const video of this.source.querySelectorAll('video')) {
       if (video instanceof HTMLVideoElement) {
         elements.push(video);
       }
     }
+    const filtered: HTMLMediaElement[] = [];
     for (const media of elements) {
-      if (isMediaElementPaused(media) || isNaN(media.duration) || media.duration <= 0)
-        continue;
-      return [media];
+      if (this.filter.test(media)) {
+        filtered.push(media);
+      }
     }
-    return [];
+    return filtered;
   }
 }

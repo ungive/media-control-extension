@@ -1,7 +1,5 @@
 
 export enum ExtensionMessage {
-  SendMediaUpdates = 1,
-  CancelMediaUpdates,
   CurrentMedia,
   PopoutOpened,
   PopoutClosed,
