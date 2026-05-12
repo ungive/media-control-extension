@@ -67,6 +67,11 @@ export namespace Constants {
       track: undefined,
       album: new RegExp('/album/'),
       artist: new RegExp('[^\\.]+\\.[^\\.]+\\.[^\\.\\/]+\\/?(\\?.+)?$'),
+    },
+    'com.soundcloud': {
+      track: undefined,
+      album: undefined,
+      artist: new RegExp('/[^\\/]+(\\?.+)?$'),
     }
   };
 
