@@ -48,6 +48,11 @@ export namespace Constants {
       album: new RegExp('/browse/'),
       artist: new RegExp('/channel/')
     },
+    'com.youtube': {
+      track: new RegExp('/watch'),
+      album: undefined,
+      artist: new RegExp('/channel/')
+    },
     'com.deezer': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
