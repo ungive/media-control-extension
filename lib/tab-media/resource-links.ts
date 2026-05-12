@@ -202,14 +202,17 @@ function findResourceLinks(
   innerTextIncludes: boolean = false,
   roots: RootElement[] = findRootNodes()
 ): HTMLLinkElement[] {
+
+  // FIXME Make sure to only show links that point to the same domain, unless
+  // e.g. a flag is set to match with a different domain.
+
   innerText = innerText.trim();
   const elements: Set<HTMLLinkElement> = new Set();
   for (const root of roots) {
     const links = root.querySelectorAll<HTMLLinkElement>('a[href]');
     for (const element of links) {
-      // Make sure to resolve the entire URL by accessing the href attribute.
-      const path = new URL(element.href).pathname;
-      if (!pathPattern.test(path)) {
+      const url = new URL(element.href).toString();
+      if (!pathPattern.test(url)) {
         continue;
       }
       const text = element.innerText.trim();

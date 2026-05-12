@@ -57,6 +57,11 @@ export namespace Constants {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
       artist: new RegExp('/artist/')
+    },
+    'com.bandcamp': {
+      track: undefined,
+      album: new RegExp('/album/'),
+      artist: new RegExp('[^\\.]+\\.[^\\.]+\\.[^\\.\\/]+\\/?(\\?.+)?$'),
     }
   };
 
