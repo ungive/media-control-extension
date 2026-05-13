@@ -396,25 +396,27 @@ export function findBestMatchingResourceLinks(
   const urls: Map<ResourceType, Map<string, string>> = new Map();
   for (const pair of ancestorPairs) {
     for (const element of pair.pairs) {
+      const firstInnerText = element.first.node.innerText.trim();
+      const secondInnerText = element.second.node.innerText.trim();
       if (!urls.has(pair.firstType)) {
         urls.set(pair.firstType, new Map([
-          [element.first.node.innerText, element.first.node.href]
+          [firstInnerText, element.first.node.href]
         ]));
       }
-      else if (!urls.get(pair.firstType)!.has(element.first.node.innerText)) {
+      else if (!urls.get(pair.firstType)!.has(firstInnerText)) {
         urls.get(pair.firstType)!.set(
-          element.first.node.innerText,
+          firstInnerText,
           element.first.node.href
         );
       }
       if (!urls.has(pair.secondType)) {
         urls.set(pair.secondType, new Map([
-          [element.second.node.innerText, element.second.node.href]
+          [secondInnerText, element.second.node.href]
         ]));
       }
-      else if (!urls.get(pair.secondType)!.has(element.second.node.innerText)) {
+      else if (!urls.get(pair.secondType)!.has(secondInnerText)) {
         urls.get(pair.secondType)!.set(
-          element.second.node.innerText,
+          secondInnerText,
           element.second.node.href
         );
       }
