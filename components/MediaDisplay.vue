@@ -257,11 +257,11 @@ devBannerHidden.watch((value) => {
                       v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
                       :key="item.state.metadata.title">
                       <a @click.prevent="showTab(item.tabId)" :href="item.state.resourceLinks?.trackUrl ? item.state.resourceLinks?.trackUrl[Object.keys(item.state.resourceLinks?.trackUrl)[0]] : undefined" :title="item.state.metadata.title"
-                        class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline">{{
+                        class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline font-semibold">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
                     <a v-else @click.stop.prevent="showTab(item.tabId)" :href="item.state.resourceLinks?.trackUrl ? item.state.resourceLinks?.trackUrl[Object.keys(item.state.resourceLinks?.trackUrl)[0]] : undefined" :title="item.state.metadata.title"
-                      class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5">{{
+                      class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5 font-semibold">{{
                         item.state.metadata.title }}</a>
                   </div>
                   <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
