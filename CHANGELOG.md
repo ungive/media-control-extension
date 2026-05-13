@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- The track title is now semibold to emphasize it more
+- Now extracting page links for the track and artist pages on SoundCloud
+- Fixed some links not being extracted properly that contained whitespace
+
 ## 0.1.1
 
 - Now shows all media from tabs, the media does not have to be audible anymore
