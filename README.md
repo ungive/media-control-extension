@@ -1,33 +1,30 @@
 # Media Control
 
-This browser extension displays media from all your open tabs
-and allows you to control it.
+View and control all media that is playing in your browser.
 
-It comes with rich metadata support,
-including song details from music streaming services,
-links to the song, artist and album pages.
-All completely offline &ndash; the data is extracted from the browser tab
-by analyzing the web page, no requests to external APIs are made.
-You can also control media playback in most cases, if the website supports it,
-by pausing and resuming it, skipping to the next song
-or rewinding to the beginning.
+Displays all available metadata, extracts links to track, artist and album pages from each website and offers media controls like play, pause, skip and rewind, if the web page supports it.
 
-You can also create a pop-out window to continuously observe media.
+![](./.github/assets/screenshot-menu.png)
 
-> [!NOTE]
-> The extension is still in development. A first release will follow soon.
+[![](./.github/assets/download-firefox-badge.png)](https://addons.mozilla.org/firefox/addon/media-control-extension/)
+
+*Available on the Chrome Web Store soon browsers soon. Download it manually for Chrome [here](https://github.com/ungive/media-control-extension/releases).*
+
+## Features
+
+- Detects media on almost all websites and major services like Spotify, Deezer, TIDAL, YouTube Music, Apple Music, SoundCloud and YouTube. It works generically without any hardcoding that breaks easily
+- Extracts links to track, artist and album pages directly from the website, if they are available on the page. You can quickly navigate to the artist's or album page. This does not make any additional API requests
+- You can control the media (play, pause, skip, rewind), if the page has a media element (most do)
+- Does not break with Spotify, unlike many other extensions that offer similar functionality
+- You can create a pop-out window that continuously shows what's currently playing
+
+Do you have an idea for a new feature? [Suggest it!](https://github.com/ungive/media-control-extension/issues)
 
 ## Screenshots
 
-### Firefox
-
 ![](./.github/assets/screenshot-firefox.png)
 
-### Chrome
-
 ![](./.github/assets/screenshot-chrome.png)
-
-### Pop-out window
 
 ![](./.github/assets/screenshot-poput-window.png)
 
@@ -77,5 +74,5 @@ $ bash ./dev-container.sh --erase
 ## Copyright
 
 Copyright (c) 2025-2026 Jonas van den Berg  
-This code is source-available only at this time, until it is published.  
+This code is source-available only at this time, until it is published on all major stores.  
 All rights reserved.
