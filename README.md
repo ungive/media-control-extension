@@ -1,4 +1,4 @@
-# Media Control
+# Media Control Extension
 
 View and control all media that is playing in your browser.
 
