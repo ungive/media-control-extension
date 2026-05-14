@@ -17,36 +17,32 @@ export function isMediaElementPaused(element: HTMLMediaElement): boolean {
  *
  * @returns The current page's favicon URL.
  */
-export function getFaviconUrl(): URL | null {
-  // return new URL("/favicon.ico", location.origin);
-
-  // Use this if the above code doesn't find the right favicon at some point
-  let ico: URL | null = null;
-  let png: URL | null = null;
+export function getFaviconUrl(): URL | undefined {
+  let icon: URL | undefined = undefined
   for (const element of document.querySelectorAll('link[rel*=icon]')) {
-    if (!(element instanceof HTMLLinkElement))
+    const relItems = element.getAttribute('rel')?.split(' ');
+    if (relItems === undefined || !relItems.includes("icon")) {
       continue;
+    }
     const href = element.getAttribute('href');
-    if (href === null)
+    if (href === null) {
       continue;
-    const url = new URL(href, location.origin);
-    if (href.endsWith('.ico') && ico === null)
-      ico = url;
-    if (href.endsWith('.png') && png === null)
-      png = url;
-    if (ico !== null)
+    }
+    if (href.endsWith(".ico") || href.endsWith(".png")) {
+      icon = new URL(href, location.origin);
       break;
+    }
   }
-  if (ico !== null)
-    return ico;
-  if (png !== null)
-    return png;
-  return null;
+  if (icon === undefined) {
+    // Fall back to the favicon in the server root.
+    icon = new URL("favicon.ico", location.origin);
+  }
+  return icon;
 }
 
 /**
  * Returns the URL of the page.
- * 
+ *
  * @returns The URL of the page.
  */
 export function getPageUrl(): URL {
@@ -55,7 +51,7 @@ export function getPageUrl(): URL {
 
 /**
  * Returns the reverse domain of the page.
- * 
+ *
  * @returns The reverse domain of the page.
  */
 export function getReverseDomain(): string {

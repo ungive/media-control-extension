@@ -121,7 +121,7 @@ export class TabMediaState implements ITabMediaState {
    */
   serialize(
     url: URL,
-    faviconUrl: URL | null,
+    faviconUrl: URL | undefined,
     resourceLinks: Map<ResourceType, Map<string, string>>
   ): BrowserMedia.MediaState {
     return {
