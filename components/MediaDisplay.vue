@@ -256,7 +256,7 @@ devBannerHidden.watch((value) => {
                     <OverflowingText
                       v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
                       :key="item.state.metadata.title">
-                      <a @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
+                      <a @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)" @contextmenu="!$event.target || !($event.target as HTMLElement).getAttribute('href') ? $event.preventDefault() : null"
                         class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline font-semibold">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
