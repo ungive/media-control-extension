@@ -2,7 +2,7 @@
 import { isPopout } from '@/entrypoints/popup/popout';
 import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { ArrowUturnLeftIcon, ForwardIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon } from '@heroicons/vue/16/solid';
+import { ArrowDownOnSquareIcon, ArrowUturnLeftIcon, CursorArrowRaysIcon, ForwardIcon, GlobeAltIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon, SpeakerWaveIcon, SpeakerXMarkIcon, WindowIcon } from '@heroicons/vue/16/solid';
 import { InformationCircleIcon } from '@heroicons/vue/20/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
 import { Icon } from '@iconify/vue';
@@ -13,6 +13,10 @@ import ProgressBar from './ProgressBar.vue';
 import TextWithLinks from './TextWithLinks.vue';
 import DevBanner from './DevBanner.vue';
 import { devBannerHidden } from '@/lib/util/storage';
+
+const COVER_MIN_REM = 7
+
+const hasPopout = ref(false)
 
 const items = ref<{
   tabId: number
@@ -30,18 +34,41 @@ if (process.env.NODE_ENV === 'development') {
   })
 }
 
-const coverMinRem = 7
-const computedItems = computed(() => items.value.map(item => ({
-  ...item,
-  src: selectImage(item.state.images, coverMinRem)
-})))
+const tabMuteStates = ref<Record<number, boolean>>({});
 
-const hasPopout = ref(false)
-browser.runtime.sendMessage({
-  type: PopupMessage.GetPopoutState
-} as RuntimeMessage);
+watch(items, async (newItems) => {
+  await Promise.all(newItems.map(item => loadMutedState(item.tabId)));
 
-onMounted(() => {
+  // Clean up removed tabs.
+  const validTabIds = new Set(newItems.map(i => i.tabId));
+  for (const tabId of Object.keys(tabMuteStates.value)) {
+    if (!validTabIds.has(Number(tabId))) {
+      delete tabMuteStates.value[Number(tabId)];
+    }
+  }
+}, {
+  immediate: true,
+  deep: true,
+});
+
+async function loadMutedState(tabId: number) {
+  try {
+    const tab = await browser.tabs.get(tabId);
+    tabMuteStates.value[tabId] = !!tab.mutedInfo?.muted;
+  } catch (e) {
+    console.error(e);
+    tabMuteStates.value[tabId] = false;
+  }
+}
+
+function handleTabUpdated(tabId: number, info: Browser.tabs.OnUpdatedInfo) {
+  if (info.mutedInfo) {
+    tabMuteStates.value[tabId] = info.mutedInfo.muted;
+  }
+}
+
+onMounted(async () => {
+  // React to messages from the background script.
   browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
     switch (message.type) {
       case ExtensionMessage.CurrentMedia:
@@ -79,11 +106,30 @@ onMounted(() => {
   // Connect to the background script for the time the popup is opened.
   browser.runtime.connect();
 
+  // Request the popout state.
+  browser.runtime.sendMessage({
+    type: PopupMessage.GetPopoutState
+  } as RuntimeMessage);
+
   // Request current media from the background script.
   browser.runtime.sendMessage({
     type: PopupMessage.GetCurrentMedia
   } as RuntimeMessage);
+
+  // Handle tab updates and tab mute changes.
+  browser.tabs.onUpdated.addListener(handleTabUpdated);
 });
+
+onUnmounted(() => {
+  // Make sure to unregister the tab update listener.
+  browser.tabs.onUpdated.removeListener(handleTabUpdated);
+});
+
+const computedItems = computed(() => items.value.map(item => ({
+  ...item,
+  src: selectImage(item.state.images, COVER_MIN_REM),
+  muted: tabMuteStates.value[item.tabId] ?? false,
+})))
 
 async function focusTabWindow(tabId: number) {
   const tab = await browser.tabs.get(tabId);
@@ -102,8 +148,13 @@ function showTab(tabId: number, closePopup: boolean = true) {
   }
 }
 
-async function closeTab(tabId: number) {
-  await browser.tabs.remove(tabId);
+function toggleTabMute(tabId: number) {
+  const state = tabMuteStates.value[tabId];
+  if (state !== undefined) {
+    browser.tabs.update(tabId, { muted: !state });
+  } else {
+    console.assert(false, "Missing muted state");
+  }
 }
 
 function convertRemToPixels(rem: number) {
@@ -313,7 +364,14 @@ devBannerHidden.watch((value) => {
                     <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
                       @click.prevent="showTab(item.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
                   </div>
-                  <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
+                  <div class="flex-shrink-0 ms-2.5 me-0">
+                    <button @click="toggleTabMute(item.tabId)" title="Mute"
+                      class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                      <SpeakerWaveIcon v-if="!item.muted" class="size-4 mt-0.5"></SpeakerWaveIcon>
+                      <SpeakerXMarkIcon v-else class="size-4 mt-0.5"></SpeakerXMarkIcon>
+                    </button>
+                  </div>
+                  <div class="flex-shrink-0 ms-2.5 me-0">
                     <a :href="getHomepage(item.state.source.siteUrl)"
                       :title="getHostname(item.state.source.siteUrl)" target="_blank">
                       <img v-if="item.state.source?.faviconUrl"
