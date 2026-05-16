@@ -313,14 +313,6 @@ devBannerHidden.watch((value) => {
                     <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
                       @click.prevent="showTab(item.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
                   </div>
-                  <template v-for="shareLink in [getShareLink(item.state.resourceLinks)]">
-                    <div v-if="shareLink" class="flex-shrink-0">
-                      <a :href="shareLink" target="_blank" title="Share"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
-                        <ShareIcon class="size-4 mt-0.5"></ShareIcon>
-                      </a>
-                    </div>
-                  </template>
                   <div class="flex-shrink-0 ms-2.5 me-0" v-if="item.state.source?.faviconUrl">
                     <a :href="getHomepage(item.state.source.siteUrl)"
                       :title="getHostname(item.state.source.siteUrl)" target="_blank">
