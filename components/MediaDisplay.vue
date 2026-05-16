@@ -263,6 +263,18 @@ async function showDevBanner() {
 devBannerHidden.watch((value) => {
   devBannerHiddenState.value = value;
 });
+
+const failedFavicons = ref(new Set<string>());
+
+function handleFaviconError(url?: string) {
+  if (url) {
+    failedFavicons.value.add(url);
+  }
+}
+
+function hasFailedFavicon(url?: string) {
+  return !url || failedFavicons.value.has(url);
+}
 </script>
 
 <template>
@@ -377,9 +389,9 @@ devBannerHidden.watch((value) => {
                     <a :href="getHomepage(item.state.source.siteUrl)"
                       :title="getHostname(item.state.source.siteUrl)" target="_blank"
                       class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem]">
-                      <img v-if="item.state.source?.faviconUrl"
+                      <img v-if="!hasFailedFavicon(item.state.source?.faviconUrl)"
                         class="w-4 h-4 mt-0.5 rounded-md object-cover object-center"
-                        :src="item.state.source?.faviconUrl" alt="Favicon">
+                        :src="item.state.source?.faviconUrl" alt="Favicon" @error="handleFaviconError(item.state.source?.faviconUrl)">
                       <GlobeAltIcon v-else class="size-4 mt-0.5"></GlobeAltIcon>
                     </a>
                   </div>
