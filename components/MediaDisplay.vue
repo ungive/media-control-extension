@@ -237,7 +237,7 @@ devBannerHidden.watch((value) => {
       </div>
     </div>
     <div class="flow-root min-w-[28rem] max-w-[30rem]">
-      <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+      <ul role="list" class="divide-y divide-gray-200 dark:divide-neutral-800">
         <template v-for="item in computedItems">
           <li class="py-3 group" v-if="item.state.metadata" :key="item.tabId">
             <div class="flex items-stretch">
