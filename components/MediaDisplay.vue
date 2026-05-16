@@ -153,9 +153,9 @@ function getHomepage(url: string): string {
 
 function getShareLink(
   resourceLinks: BrowserMedia.MediaState_ResourceLinks | undefined
-): string | null {
+): string | undefined {
   if (resourceLinks === undefined) {
-    return null;
+    return undefined;
   }
   const trackUrls = Object.entries(resourceLinks.trackUrl)
   if (trackUrls.length > 0) {
@@ -165,7 +165,7 @@ function getShareLink(
   if (albumUrls.length > 0) {
     return albumUrls.at(0)![1];
   }
-  return null;
+  return undefined;
 }
 
 function pauseMedia(tabId: number) {
@@ -256,11 +256,11 @@ devBannerHidden.watch((value) => {
                     <OverflowingText
                       v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
                       :key="item.state.metadata.title">
-                      <a @click.prevent="showTab(item.tabId)" :href="item.state.resourceLinks?.trackUrl ? item.state.resourceLinks?.trackUrl[Object.keys(item.state.resourceLinks?.trackUrl)[0]] : undefined" :title="item.state.metadata.title"
+                      <a @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
                         class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline font-semibold">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
-                    <a v-else @click.stop.prevent="showTab(item.tabId)" :href="item.state.resourceLinks?.trackUrl ? item.state.resourceLinks?.trackUrl[Object.keys(item.state.resourceLinks?.trackUrl)[0]] : undefined" :title="item.state.metadata.title"
+                    <a v-else @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
                       class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5 font-semibold">{{
                         item.state.metadata.title }}</a>
                   </div>
