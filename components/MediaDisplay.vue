@@ -293,13 +293,15 @@ devBannerHidden.watch((value) => {
           <li class="py-3 group" v-if="item.state.metadata" :key="item.tabId">
             <div class="flex items-stretch">
               <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
-                <img v-if="item.src"
-                  class="w-28 h-28 rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none"
-                  :title="item.state.metadata.album" :src="item.src" alt="Cover">
-                <PlayCircleIcon v-else-if="item.state.playbackState?.playing"
-                  class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200">
-                </PlayCircleIcon>
-                <PauseCircleIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
+                <div class="relative w-28 h-28 mt-0.5 group/cover">
+                  <img v-if="item.src"
+                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none', item.muted ? 'grayscale opacity-30' : '']"
+                    :title="item.state.metadata.album" :src="item.src" alt="Cover">
+                  <PlayCircleIcon v-else-if="item.state.playbackState?.playing && !item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PlayCircleIcon>
+                  <PauseCircleIcon v-else-if="!item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
+                  <SpeakerXMarkIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></SpeakerXMarkIcon>
+                  <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 opacity-70 brightness-[60%] size-16 m-auto"></SpeakerXMarkIcon>
+                </div>
               </div>
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
                 <div @click="showTab(item.tabId)" class="flex-grow -translate-y-0.5 cursor-pointer">
