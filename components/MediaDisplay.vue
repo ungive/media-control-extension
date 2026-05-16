@@ -373,7 +373,8 @@ devBannerHidden.watch((value) => {
                   </div>
                   <div class="flex-shrink-0 ms-2.5 me-0">
                     <a :href="getHomepage(item.state.source.siteUrl)"
-                      :title="getHostname(item.state.source.siteUrl)" target="_blank">
+                      :title="getHostname(item.state.source.siteUrl)" target="_blank"
+                      class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem]">
                       <img v-if="item.state.source?.faviconUrl"
                         class="w-4 h-4 mt-0.5 rounded-md object-cover object-center"
                         :src="item.state.source?.faviconUrl" alt="Favicon">
