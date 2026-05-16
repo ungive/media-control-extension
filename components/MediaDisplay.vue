@@ -251,16 +251,16 @@ devBannerHidden.watch((value) => {
                 <PauseCircleIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
               </div>
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
-                <div class="flex-grow -translate-y-0.5">
-                  <div class="flex cursor-default">
+                <div @click="showTab(item.tabId)" class="flex-grow -translate-y-0.5 cursor-pointer">
+                  <div class="flex">
                     <OverflowingText
                       v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
                       :key="item.state.metadata.title">
-                      <a @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)" @contextmenu="!$event.target || !($event.target as HTMLElement).getAttribute('href') ? $event.preventDefault() : null"
+                      <a @click.stop.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)" @contextmenu="!$event.target || !($event.target as HTMLElement).getAttribute('href') ? $event.preventDefault() : null"
                         class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline font-semibold">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
-                    <a v-else @click.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
+                    <a v-else @click.stop.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
                       class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5 font-semibold">{{
                         item.state.metadata.title }}</a>
                   </div>
