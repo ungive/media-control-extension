@@ -309,8 +309,8 @@ devBannerHidden.watch((value) => {
                       </a>
                     </div>
                   </div>
-                  <div class="flex-1 min-w-0 ms-2.5" v-if="item.state.source?.siteUrl">
-                    <a class="no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
+                  <div class="flex-1 min-w-0 ms-2.5 me-2.5" v-if="item.state.source?.siteUrl">
+                    <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
                       @click.prevent="showTab(item.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
                   </div>
                   <template v-for="shareLink in [getShareLink(item.state.resourceLinks)]">
