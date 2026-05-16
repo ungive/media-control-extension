@@ -366,7 +366,7 @@ devBannerHidden.watch((value) => {
                   </div>
                   <div class="flex-shrink-0 ms-2.5 me-0">
                     <button @click="toggleTabMute(item.tabId)" title="Mute"
-                      class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
                       <SpeakerWaveIcon v-if="!item.muted" class="size-4 mt-0.5"></SpeakerWaveIcon>
                       <SpeakerXMarkIcon v-else class="size-4 mt-0.5"></SpeakerXMarkIcon>
                     </button>
