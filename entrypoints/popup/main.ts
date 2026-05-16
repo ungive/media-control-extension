@@ -11,7 +11,10 @@ if (isPopout()) {
 
 // Prevent showing the context menu for anything but link elements.
 document.body.addEventListener('contextmenu', (e) => {
-  if (e.target instanceof HTMLElement && e.target.closest('a') === null) {
-    e.preventDefault();
+  if (e.target instanceof HTMLElement) {
+    const closest = e.target.closest('a');
+    if (closest === null || closest.href.length === 0) {
+      e.preventDefault();
+    }
   }
 });
