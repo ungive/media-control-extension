@@ -13,6 +13,8 @@ import ProgressBar from './ProgressBar.vue';
 import TextWithLinks, { LinkClickEvent } from './TextWithLinks.vue';
 import DevBanner from './DevBanner.vue';
 import { devBannerHidden } from '@/lib/util/storage';
+import { ArrowsPointingOutIcon as ArrowsPointingOutIcon20 } from '@heroicons/vue/20/solid';
+import { ArrowsPointingOutIcon as ArrowsPointingOutIcon16 } from '@heroicons/vue/16/solid';
 
 const COVER_MIN_REM = 7
 
@@ -24,6 +26,7 @@ const items = ref<{
   // FIXME Group this under "clientState" or a similar field.
   controls: MediaControlCapabilities
   metadataButtons: Set<string>
+  isCoverBright: boolean
 }[]>([]);
 
 if (process.env.NODE_ENV === 'development') {
@@ -69,18 +72,71 @@ function handleTabUpdated(tabId: number, info: Browser.tabs.OnUpdatedInfo) {
   }
 }
 
+async function isBrightCorner(url: string): Promise<boolean> {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+
+    await img.decode();
+
+    const size = 32;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(
+      img,
+      img.width - size,
+      img.height - size,
+      size,
+      size,
+      0,
+      0,
+      size,
+      size,
+    );
+
+    const data = ctx.getImageData(0, 0, size, size).data;
+
+    let total = 0;
+    let count = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const [r, g, b, a] = data.slice(i, i + 4);
+
+      if (a < 25) continue;
+
+      total += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      count++;
+    }
+
+    return total / count > 200;
+  } catch {
+    return false;
+  }
+}
+
 onMounted(async () => {
   // React to messages from the background script.
   browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
     switch (message.type) {
       case ExtensionMessage.CurrentMedia:
         const currentMediaPayload = message.payload as CurrentMediaPayload;
-        items.value = currentMediaPayload.media.map(m => ({
-          tabId: m.tabId,
-          state: BrowserMedia.MediaState.fromJSON(m.stateJson),
-          controls: m.controls,
-          metadataButtons: m.metadataButtons,
-        })).sort((a, b) => {
+        items.value = (await Promise.all(currentMediaPayload.media.map(async m => {
+          const parsedState = BrowserMedia.MediaState.fromJSON(m.stateJson);
+          const smallestImage = parsedState.images.length > 0 ? selectImage(parsedState.images, 1) : undefined;
+          return {
+            tabId: m.tabId,
+            state: parsedState,
+            controls: m.controls,
+            metadataButtons: m.metadataButtons,
+            // FIXME This can take a long time to load and might block indefinitely!
+            isCoverBright: smallestImage ? await isBrightCorner(smallestImage) : false,
+          };
+        }))).sort((a, b) => {
           if (a.state.playbackState?.positionTimestamp && !b.state.playbackState?.positionTimestamp) {
             return -1
           }
@@ -134,18 +190,40 @@ const computedItems = computed(() => items.value.map(item => ({
   muted: tabMuteStates.value[item.tabId] ?? false,
 })))
 
-async function focusTabWindow(tabId: number) {
+async function showTab(tabId: number, closePopup: boolean = true) {
   const tab = await browser.tabs.get(tabId);
-  if (tab.windowId !== undefined) {
+  await browser.tabs.update(tabId, {
+    active: true
+  });
+  if (tab.windowId) {
     await browser.windows.update(tab.windowId, {
       focused: true
     });
   }
+  if (closePopup && !isPopout()) {
+    window.close();
+  }
 }
 
-function showTab(tabId: number, closePopup: boolean = true) {
-  focusTabWindow(tabId)
-  browser.tabs.update(tabId, { active: true });
+async function openOrFocusTab(href: string, closePopup: boolean = true) {
+  const tabs = await browser.tabs.query({});
+  const existingTab = tabs.find((tab) => {
+    return tab.url && tab.url === href;
+  });
+  if (existingTab?.id) {
+    await browser.tabs.update(existingTab.id, {
+      active: true,
+    });
+    if (existingTab.windowId) {
+      await browser.windows.update(existingTab.windowId, {
+        focused: true,
+      });
+    }
+  } else {
+    await browser.tabs.create({
+      url: href,
+    });
+  }
   if (closePopup && !isPopout()) {
     window.close();
   }
@@ -298,6 +376,17 @@ function handleFaviconError(url?: string) {
 function hasFailedFavicon(url?: string) {
   return !url || failedFavicons.value.has(url);
 }
+
+function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
+  // TODO Open an actual image viewer. Some ideas:
+  // - Focus the tab and overlay an image viewer into the tab
+  // - Open a separate window (like the pop-out and show an image viewer)
+  // - Fill the pop-up window with the image at full size
+  const imageHref = selectImage(images, 999999);
+  if (imageHref !== undefined) {
+    openOrFocusTab(imageHref);
+  }
+}
 </script>
 
 <template>
@@ -344,6 +433,19 @@ function hasFailedFavicon(url?: string) {
                     leave-to-class="opacity-0 scale-90">
                     <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 brightness-[70%] size-12 m-auto opacity-100 scale-100 transition-all group-hover/cover:opacity-0 group-hover/cover:scale-90 duration-100" />
                   </Transition>
+                  <div v-if="item.src" class="absolute bottom-0 right-0">
+                    <button @click.stop="openImageViewer(item.state.images)" target="_blank"
+                      :class="['block rounded-tl-xl rounded-bl-xl rounded-tr-xl transition-all duration-300 opacity-0 group-hover/cover:opacity-100 group-hover/cover:scale-100 backdrop-blur-md bg-opacity-80 group/cover-zoom shadow-sm', item.isCoverBright ? 'bg-white' : 'bg-neutral-950']">
+                      <ArrowsPointingOutIcon16 v-if="item.isCoverBright" :class="[
+                        'size-[1.9rem] pl-1.5 pt-1.5 pr-1.5 pb-1.5 transition-all duration-300 shadow-sm',
+                        'text-black/70 group-hover/cover-zoom:text-black/100'
+                      ]" />
+                      <ArrowsPointingOutIcon20 v-else :class="[
+                        'size-[1.8rem] pl-1.5 pt-1.5 pr-1.5 pb-1.5 transition-all duration-300 shadow-sm',
+                        'text-white/80 group-hover/cover-zoom:text-white/100'
+                      ]" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
