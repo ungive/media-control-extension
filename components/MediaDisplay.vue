@@ -330,12 +330,20 @@ function hasFailedFavicon(url?: string) {
               <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
                 <div class="relative w-28 h-28 mt-0.5 group/cover">
                   <img v-if="item.src"
-                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none', item.muted ? 'grayscale opacity-30' : '']"
+                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none transition-all duration-50', item.muted ? 'grayscale opacity-30' : '']"
                     :title="item.state.metadata.album" :src="item.src" alt="Cover">
                   <PlayCircleIcon v-else-if="item.state.playbackState?.playing && !item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PlayCircleIcon>
                   <PauseCircleIcon v-else-if="!item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
                   <SpeakerXMarkIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></SpeakerXMarkIcon>
-                  <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 opacity-70 brightness-[60%] size-16 m-auto"></SpeakerXMarkIcon>
+                  <Transition
+                    enter-active-class="transition duration-50 ease-out"
+                    enter-from-class="opacity-0 scale-90"
+                    enter-to-class="opacity-70 scale-100"
+                    leave-active-class="transition duration-50 ease-in"
+                    leave-from-class="opacity-70 scale-100"
+                    leave-to-class="opacity-0 scale-90">
+                    <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 brightness-[70%] size-12 m-auto" />
+                  </Transition>
                 </div>
               </div>
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
