@@ -331,7 +331,7 @@ function hasFailedFavicon(url?: string) {
                 <div class="relative w-28 h-28 mt-0.5 group/cover">
                   <img v-if="item.src"
                     :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none transition-all duration-50', item.muted ? 'grayscale opacity-30' : '']"
-                    :title="item.state.metadata.album" :src="item.src" alt="Cover">
+                    :src="item.src" alt="Cover">
                   <PlayCircleIcon v-else-if="item.state.playbackState?.playing && !item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PlayCircleIcon>
                   <PauseCircleIcon v-else-if="!item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
                   <SpeakerXMarkIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></SpeakerXMarkIcon>
