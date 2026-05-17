@@ -8,6 +8,7 @@ const props = defineProps({
   },
   links: Object,
   buttons: Set<string>,
+  matchButtonsEntirely: Boolean,
   baseClass: String,
   linkClass: String
 });
@@ -34,6 +35,7 @@ function extractComponents(
   text: string,
   links: { [key: string]: string } | undefined,
   buttons: Set<string> | undefined,
+  matchButtonsEntirely: boolean,
 ): TextComponent[] {
   if (links === undefined) {
     return [
@@ -44,6 +46,7 @@ function extractComponents(
       }
     ];
   }
+  text = text.trim();
   const upperText = text.toUpperCase();
   const components = new Map<number, TextComponent>();
   const takenIndices = new Set<number>();
@@ -51,7 +54,7 @@ function extractComponents(
   entries.sort((a, b) => b[0].length - a[0].length);
   for (const [key, value] of entries) {
     for (let pos = 0; ;) {
-      const upperKey = key.toUpperCase();
+      const upperKey = key.trim().toUpperCase();
       const index = upperText.indexOf(upperKey, pos);
       if (index < 0) break;
       pos = index + upperKey.length;
@@ -71,19 +74,34 @@ function extractComponents(
     const buttonItems: string[] = Array.from(buttons);
     buttonItems.sort((a, b) => b.length - a.length);
     for (const key of buttonItems) {
-      for (let pos = 0; ;) {
-        const upperKey = key.toUpperCase();
-        const index = upperText.indexOf(upperKey, pos);
-        if (index < 0) break;
-        pos = index + upperKey.length;
-        if (!takenIndices.has(index)) {
-          components.set(index, {
-            text: text.substring(index, pos),
+      if (matchButtonsEntirely) {
+        if (key.trim().toUpperCase() === upperText) {
+          components.set(0, {
+            text: text,
             clickable: true,
             href: undefined,
           });
-          for (let i = index; i < pos; i++) {
+          for (let i = 0; i < text.length; i++) {
             takenIndices.add(i);
+          }
+          break;
+        }
+      } else {
+        // FIXME Copy-pasted...
+        for (let pos = 0; ;) {
+          const upperKey = key.trim().toUpperCase();
+          const index = upperText.indexOf(upperKey, pos);
+          if (index < 0) break;
+          pos = index + upperKey.length;
+          if (!takenIndices.has(index)) {
+            components.set(index, {
+              text: text.substring(index, pos),
+              clickable: true,
+              href: undefined,
+            });
+            for (let i = index; i < pos; i++) {
+              takenIndices.add(i);
+            }
           }
         }
       }
@@ -113,7 +131,12 @@ function extractComponents(
 }
 
 function init() {
-  textComponents.value = extractComponents(props.text, props.links, props.buttons);
+  textComponents.value = extractComponents(
+    props.text,
+    props.links,
+    props.buttons,
+    props.matchButtonsEntirely
+  );
 }
 
 onMounted(() => init());
