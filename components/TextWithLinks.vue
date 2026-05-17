@@ -7,23 +7,42 @@ const props = defineProps({
     required: true
   },
   links: Object,
+  buttons: Set<string>,
   baseClass: String,
   linkClass: String
 });
 
+export interface LinkClickEvent {
+  text: string
+  href: string | undefined
+  originalEvent: MouseEvent
+}
+
+const emit = defineEmits<{
+  (e: 'link-click', payload: LinkClickEvent): void
+}>();
+
 interface TextComponent {
   text: string
-  href: string | null
+  clickable: boolean
+  href: string | undefined
 }
 
 const textComponents: Ref<TextComponent[]> = ref([])
 
 function extractComponents(
   text: string,
-  links: { [key: string]: string } | undefined
+  links: { [key: string]: string } | undefined,
+  buttons: Set<string> | undefined,
 ): TextComponent[] {
   if (links === undefined) {
-    return [{ text, href: null }];
+    return [
+      {
+        text,
+        clickable: false,
+        href: undefined,
+      }
+    ];
   }
   const upperText = text.toUpperCase();
   const components = new Map<number, TextComponent>();
@@ -39,10 +58,33 @@ function extractComponents(
       if (!takenIndices.has(index)) {
         components.set(index, {
           text: text.substring(index, pos),
-          href: value
+          clickable: true,
+          href: value,
         });
         for (let i = index; i < pos; i++) {
           takenIndices.add(i);
+        }
+      }
+    }
+  }
+  if (buttons !== undefined) {
+    const buttonItems: string[] = Array.from(buttons);
+    buttonItems.sort((a, b) => b.length - a.length);
+    for (const key of buttonItems) {
+      for (let pos = 0; ;) {
+        const upperKey = key.toUpperCase();
+        const index = upperText.indexOf(upperKey, pos);
+        if (index < 0) break;
+        pos = index + upperKey.length;
+        if (!takenIndices.has(index)) {
+          components.set(index, {
+            text: text.substring(index, pos),
+            clickable: true,
+            href: undefined,
+          });
+          for (let i = index; i < pos; i++) {
+            takenIndices.add(i);
+          }
         }
       }
     }
@@ -61,7 +103,8 @@ function extractComponents(
     if (end > start) {
       allComponents.push({
         text: text.substring(start, end),
-        href: null
+        clickable: false,
+        href: undefined,
       });
       i = end - 1;
     }
@@ -70,20 +113,37 @@ function extractComponents(
 }
 
 function init() {
-  textComponents.value = extractComponents(props.text, props.links);
+  textComponents.value = extractComponents(props.text, props.links, props.buttons);
 }
 
 onMounted(() => init());
 watch(() => props.text, () => init())
 watch(() => props.links, () => init())
+
+function handleClick(
+  text: string,
+  href: string | undefined = undefined,
+  event: MouseEvent
+) {
+  event.preventDefault();
+  event.stopPropagation();
+  emit('link-click', {
+    text,
+    href,
+    originalEvent: event
+  });
+}
 </script>
 
 <template>
   <div v-bind="$attrs">
     <template v-for="component in textComponents">
-      <a @click.stop v-if="component.href !== null" :href="component.href" target="_blank" :class="[baseClass, linkClass]">{{
+      <a @click="handleClick(component.text, component.href, $event)" v-if="component.clickable && component.href !== undefined" :href="component.href" target="_blank" :class="[baseClass, linkClass]">{{
         component.text
       }}</a>
+      <button @click="handleClick(component.text, undefined, $event)" v-else-if="component.clickable && component.href === undefined">
+        <span :class="[baseClass, linkClass]">{{ component.text }}</span>
+      </button>
       <span v-else :class="baseClass">{{ component.text }}</span>
     </template>
   </div>

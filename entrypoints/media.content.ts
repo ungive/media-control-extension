@@ -1,9 +1,47 @@
-import { ExtensionMessage, MediaChangedPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
+import { ExtensionMessage, MediaChangedPayload, OpenLinkPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
 import { BrowserMedia } from "@/lib/proto";
-import { TabMediaObserver } from "@/lib/tab-media/observer";
+import { MediaStateEvent, MediaObserver } from "@/lib/tab-media/observer";
+import { findRootNodes } from "@/lib/tab-media/resource-links";
 
-let mediaObserver: TabMediaObserver | null = null;
+let mediaObserver: MediaObserver | null = null;
 let lastInteractedMediaElement: HTMLMediaElement | null = null;
+
+function openHrefLink(href: string) {
+  console.log(href);
+  href = href.trim();
+  if (href.length === 0) {
+    console.assert(false, "The link's href is empty");
+    return;
+  }
+  // Search in all root nodes since some web pages might uses shadow roots.
+  const roots = findRootNodes()
+  for (const root of roots) {
+    const elements = root.querySelectorAll<HTMLAnchorElement>("a[href]");
+    for (const element of elements) {
+      // Compare the href URL like this, so that it's automatically resolved to
+      // the final URL, since anchor elements may contain relative paths.
+      if (element.href === href) {
+        element.click();
+        return;
+      }
+    }
+  }
+}
+
+function openTextLink(text: string) {
+  text = text.trim();
+  const buttons = document.querySelectorAll("button");
+  for (const button of buttons) {
+    const innerText = button.innerText.trim();
+    if (innerText.length === 0) {
+      continue;
+    }
+    if (innerText === text) {
+      button.click();
+      break;
+    }
+  }
+}
 
 browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (!mediaObserver) {
@@ -75,17 +113,26 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
       }
       break;
     }
+    case PopupMessage.OpenLink: {
+      const openLinkPayload = message.payload as OpenLinkPayload;
+      if (openLinkPayload.href !== undefined) {
+        openHrefLink(openLinkPayload.href);
+      } else {
+        openTextLink(openLinkPayload.text);
+      }
+      break;
+    }
   }
 });
 
-function onMediaUpdated(state: BrowserMedia.MediaState | null) {
+function onMediaUpdated(event: MediaStateEvent | null) {
   // TODO Do we need this check?
   // || lastInteractedMediaElement !== null
   const hasMediaElement = mediaObserver?.mediaElement !== null
   browser.runtime.sendMessage({
     type: TabMessage.MediaChanged,
     payload: {
-      stateJson: state ? BrowserMedia.MediaState.toJSON(state) as object : null,
+      stateJson: event ? BrowserMedia.MediaState.toJSON(event.state) as object : null,
       controls: {
         playPause: hasMediaElement,
         seekStart: hasMediaElement,
@@ -93,7 +140,8 @@ function onMediaUpdated(state: BrowserMedia.MediaState | null) {
           mediaObserver?.mediaElement.duration !== undefined &&
           !isNaN(mediaObserver?.mediaElement.duration) &&
           isFinite(mediaObserver?.mediaElement.duration)
-      }
+      },
+      metadataButtons: event ? event.clientState.metadataButtons : [],
     } as MediaChangedPayload,
   } as RuntimeMessage);
 }
@@ -106,7 +154,7 @@ function injectAudioHook() {
 
 function init() {
   injectAudioHook();
-  mediaObserver = new TabMediaObserver();
+  mediaObserver = new MediaObserver();
   mediaObserver.addEventListener(onMediaUpdated);
   mediaObserver.start();
 }

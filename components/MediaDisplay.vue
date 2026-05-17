@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { isPopout } from '@/entrypoints/popup/popout';
-import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
+import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, OpenLinkPayload, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
-import { ArrowDownOnSquareIcon, ArrowUturnLeftIcon, CursorArrowRaysIcon, ForwardIcon, GlobeAltIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, ShareIcon, SpeakerWaveIcon, SpeakerXMarkIcon, WindowIcon } from '@heroicons/vue/16/solid';
+import { ArrowUturnLeftIcon, ForwardIcon, GlobeAltIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from '@heroicons/vue/16/solid';
 import { InformationCircleIcon } from '@heroicons/vue/20/solid';
 import { Square2StackIcon } from '@heroicons/vue/20/solid';
 import { Icon } from '@iconify/vue';
@@ -10,7 +10,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { browser } from 'wxt/browser';
 import OverflowingText from './OverflowingText.vue';
 import ProgressBar from './ProgressBar.vue';
-import TextWithLinks from './TextWithLinks.vue';
+import TextWithLinks, { LinkClickEvent } from './TextWithLinks.vue';
 import DevBanner from './DevBanner.vue';
 import { devBannerHidden } from '@/lib/util/storage';
 
@@ -21,7 +21,9 @@ const hasPopout = ref(false)
 const items = ref<{
   tabId: number
   state: BrowserMedia.MediaState
+  // FIXME Group this under "clientState" or a similar field.
   controls: MediaControlCapabilities
+  metadataButtons: Set<string>
 }[]>([]);
 
 if (process.env.NODE_ENV === 'development') {
@@ -76,7 +78,8 @@ onMounted(async () => {
         items.value = currentMediaPayload.media.map(m => ({
           tabId: m.tabId,
           state: BrowserMedia.MediaState.fromJSON(m.stateJson),
-          controls: m.controls
+          controls: m.controls,
+          metadataButtons: m.metadataButtons,
         })).sort((a, b) => {
           if (a.state.playbackState?.positionTimestamp && !b.state.playbackState?.positionTimestamp) {
             return -1
@@ -208,11 +211,11 @@ function getShareLink(
   if (resourceLinks === undefined) {
     return undefined;
   }
-  const trackUrls = Object.entries(resourceLinks.trackUrl)
+  const trackUrls = Object.entries(resourceLinks.trackUrl);
   if (trackUrls.length > 0) {
     return trackUrls.at(0)![1];
   }
-  const albumUrls = Object.entries(resourceLinks.albumUrl)
+  const albumUrls = Object.entries(resourceLinks.albumUrl);
   if (albumUrls.length > 0) {
     return albumUrls.at(0)![1];
   }
@@ -247,6 +250,26 @@ function openPopout() {
   browser.runtime.sendMessage({
     type: PopupMessage.OpenPopout
   } as RuntimeMessage);
+}
+
+async function openLink(tabId: number, text: string, href: string | undefined) {
+  try {
+    await browser.tabs.sendMessage(tabId, {
+      type: PopupMessage.OpenLink,
+      payload: {
+        text,
+        href,
+      } as OpenLinkPayload
+    } as RuntimeMessage);
+    // On success, focus the tab.
+    showTab(tabId);
+  } catch (e) {
+    console.error(e);
+    // Fall back to opening the link in a new tab.
+    if (href !== undefined) {
+      window.open(href, '_blank')?.focus();
+    }
+  }
 }
 
 const devBannerHiddenState = ref(false)
@@ -332,12 +355,14 @@ function hasFailedFavicon(url?: string) {
                   <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
                     <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
-                      :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" />
+                      :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" :buttons="item.metadataButtons"
+                      @link-click="openLink(item.tabId, $event.text, $event.href)"/>
                   </div>
                   <div class="truncate -mt-1" v-if="item.state.metadata?.album">
                     <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
-                      :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" />
+                      :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" :buttons="item.metadataButtons"
+                      @link-click="openLink(item.tabId, $event.text, $event.href)"/>
                   </div>
                 </div>
                 <div class="text-gray-500 truncate dark:text-gray-400"

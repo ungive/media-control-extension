@@ -32,7 +32,8 @@ interface ClosestNodeAncestor<N1 extends Node, N2 extends Node> {
   maxDepth: number
 }
 
-function findRootNodes(start: RootElement = document.body): RootElement[] {
+// TODO Move this into a separate file, since it's used elsewhere.
+export function findRootNodes(start: RootElement = document.body): RootElement[] {
   const roots: RootElement[] = [start];
   const next: Node[] = [...roots];
   while (next.length > 0) {

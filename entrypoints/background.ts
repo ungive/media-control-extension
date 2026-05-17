@@ -7,7 +7,9 @@ type TabId = number;
 const tabs: Map<TabId, {
   reverseDomain: string
   state: BrowserMedia.MediaState | null
+  // FIXME Group this under "clientState" or a similar field.
   controls: MediaControlCapabilities
+  metadataButtons: Set<string>
 } | null> = new Map();
 
 let connectedPopups = 0;
@@ -45,7 +47,8 @@ async function updateTabMedia() {
         currentMediaPayload.media.push({
           tabId,
           stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
-          controls: media.controls
+          controls: media.controls,
+          metadataButtons: media.metadataButtons,
         });
       }
     }
@@ -75,7 +78,9 @@ async function updateTabMedia() {
 async function handleTabMedia(
   tabId: number,
   state: Proto.BrowserMedia.MediaState | null,
-  controls: MediaControlCapabilities | null = null
+  // FIXME Group this under "clientState" or a similar value.
+  controls: MediaControlCapabilities | null = null,
+  metadataButtons: Set<string> = new Set<string>(),
 ) {
   if (!tabs.has(tabId)) {
     tabs.set(tabId, null);
@@ -104,7 +109,8 @@ async function handleTabMedia(
     currentState = {
       reverseDomain: state.source?.reverseDomain,
       state: state,
-      controls
+      controls,
+      metadataButtons,
     };
   }
   tabs.set(tabId, currentState);
@@ -134,7 +140,8 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
           mediaChangedPayload.stateJson
             ? BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson)
             : null,
-          mediaChangedPayload.controls
+          mediaChangedPayload.controls,
+          mediaChangedPayload.metadataButtons,
         );
       }
       break;

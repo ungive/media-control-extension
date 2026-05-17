@@ -414,21 +414,47 @@ export class PlaybackPositionProgressElementObserver
   }
 }
 
-enum TabMediaObserverState {
+// This mainly exists for Apple Music since they're special and have to use
+// buttons instead of normal anchor elements to open to artist and album pages.
+function findMetadataButtons(metadata: MediaMetadata): Set<string> {
+  const buttons = new Set<string>();
+  for (const button of document.querySelectorAll('button')) {
+    const innerText = button.innerText.trim();
+    if (innerText.length === 0) {
+      continue;
+    }
+    if (metadata.artist.includes(innerText)) {
+      buttons.add(innerText);
+    }
+    if (metadata.album.includes(innerText)) {
+      buttons.add(innerText);
+    }
+  }
+  return buttons;
+}
+
+enum MediaObserverState {
   Idle,
   Observing,
 }
 
 export type MediaElementObserver = ElementGroupObserver<HTMLMediaElement, ElementEventCallback<HTMLMediaElement>>;
 
-export type TabMediaStateCallback = (state: BrowserMedia.MediaState | null) => void
+export interface MediaStateEvent {
+  state: BrowserMedia.MediaState
+  clientState: {
+    metadataButtons: Set<string>
+  }
+}
 
-export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
+export type MediaStateEventCallback = (event: MediaStateEvent | null) => void
+
+export class MediaObserver implements IObserver<MediaStateEventCallback> {
 
   // TODO Observe "navigator.mediaSession.metadata" as well, since it can
   // contain information before any media is playing on the site.
 
-  private observerState: TabMediaObserverState = TabMediaObserverState.Idle
+  private observerState: MediaObserverState = MediaObserverState.Idle
 
   private mediaElementObserver: MediaElementObserver;
   private progressElementObserver: PlaybackPositionProgressElementObserver;
@@ -441,7 +467,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   // TODO set the interval to check every second for undetected changes
   private updateInterval: NodeJS.Timeout | null = null
 
-  private eventCallbacks: (TabMediaStateCallback)[] = []
+  private eventCallbacks: (MediaStateEventCallback)[] = []
 
   static createMediaElementFilter(
     options: MediaElementFilterOptions
@@ -459,7 +485,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
 
   constructor() {
     this.mediaElementObserver = new ElementGroupObserver(
-      new MediaElementSource(TabMediaObserver.createMediaElementFilter({
+      new MediaElementSource(MediaObserver.createMediaElementFilter({
         // FIXME Does this exclude e.g. Twitch streams?
         requireDuration: true,
         // We only start observing elements that are playing.
@@ -479,18 +505,18 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   }
 
   start(): boolean {
-    if (this.observerState == TabMediaObserverState.Observing)
+    if (this.observerState == MediaObserverState.Observing)
       return true;
-    this.observerState = TabMediaObserverState.Observing;
+    this.observerState = MediaObserverState.Observing;
     this.mediaElementObserver.restart();
     this.progressElementObserver.restart();
     return true;
   }
 
   stop(): boolean {
-    if (this.observerState == TabMediaObserverState.Idle)
+    if (this.observerState == MediaObserverState.Idle)
       return false;
-    this.observerState = TabMediaObserverState.Idle;
+    this.observerState = MediaObserverState.Idle;
     this.mediaElementObserver.stop();
     this.progressElementObserver.stop();
     this.currentMediaElement = null;
@@ -507,7 +533,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
     return this.start();
   }
 
-  addEventListener(callback: TabMediaStateCallback): void {
+  addEventListener(callback: MediaStateEventCallback): void {
     this.eventCallbacks.push(callback);
   }
 
@@ -519,7 +545,7 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
-    const filter = TabMediaObserver.createMediaElementFilter({
+    const filter = MediaObserver.createMediaElementFilter({
       // FIXME Does this exclude e.g. Twitch streams?
       requireDuration: true,
       // Keep using the media element, even when it's paused.
@@ -575,18 +601,23 @@ export class TabMediaObserver implements IObserver<TabMediaStateCallback> {
         }
     }
     const reverseDomain = getReverseDomain();
-    const serialized = state.serialize(
-      getPageUrl(),
-      getFaviconUrl(),
-      state.mediaMetadata
-        ? findBestMatchingResourceLinks(
-          state.mediaMetadata,
-          reverseDomain in Constants.URL_MATCHES
-            ? Constants.URL_MATCHES[reverseDomain]
-            : ({} as ResourceLinkPatterns)
-        )
-        : new Map<ResourceType, Map<string, string>>()
-    );
+    const serialized: MediaStateEvent = {
+      state: state.serialize(
+        getPageUrl(),
+        getFaviconUrl(),
+        state.mediaMetadata
+          ? findBestMatchingResourceLinks(
+            state.mediaMetadata,
+            reverseDomain in Constants.URL_MATCHES
+              ? Constants.URL_MATCHES[reverseDomain]
+              : ({} as ResourceLinkPatterns)
+          )
+          : new Map<ResourceType, Map<string, string>>()
+      ),
+      clientState: {
+        metadataButtons: state.mediaMetadata ? findMetadataButtons(state.mediaMetadata) : new Set<string>(),
+      },
+    };
     for (const callback of this.eventCallbacks) {
       callback(serialized);
     }

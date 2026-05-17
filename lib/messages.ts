@@ -18,6 +18,7 @@ export enum PopupMessage {
   NextTrack,
   OpenPopout,
   GetPopoutState,
+  OpenLink,
 }
 
 export enum PopoutMessage {
@@ -38,12 +39,14 @@ export interface MediaControlCapabilities {
 export interface MediaChangedPayload {
   stateJson: object | null
   controls: MediaControlCapabilities
+  metadataButtons: Set<string>
 }
 
 export interface CurrentMediaElementPayload {
   tabId: number
   stateJson: object
   controls: MediaControlCapabilities
+  metadataButtons: Set<string>
 }
 
 export interface CurrentMediaPayload {
@@ -57,4 +60,9 @@ export interface WindowSizePayload {
 
 export interface PopoutStatePaylaod {
   result: boolean
+}
+
+export interface OpenLinkPayload {
+  text: string,
+  href: string | undefined,
 }
