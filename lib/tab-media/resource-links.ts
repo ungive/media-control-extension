@@ -201,15 +201,15 @@ function findResourceLinks(
   caseInsensitive: boolean = false,
   innerTextIncludes: boolean = false,
   roots: RootElement[] = findRootNodes()
-): HTMLLinkElement[] {
+): HTMLAnchorElement[] {
 
   // FIXME Make sure to only show links that point to the same domain, unless
   // e.g. a flag is set to match with a different domain.
 
   innerText = innerText.trim();
-  const elements: Set<HTMLLinkElement> = new Set();
+  const elements: Set<HTMLAnchorElement> = new Set();
   for (const root of roots) {
-    const links = root.querySelectorAll<HTMLLinkElement>('a[href]');
+    const links = root.querySelectorAll<HTMLAnchorElement>('a[href]');
     for (const element of links) {
       const url = new URL(element.href).toString();
       if (!pathPattern.test(url)) {
@@ -273,7 +273,7 @@ export function findBestMatchingResourceLinks(
     return new Map();
   }
   const roots = findRootNodes();
-  const linkElements: Map<ResourceType, HTMLLinkElement[]> = new Map();
+  const linkElements: Map<ResourceType, HTMLAnchorElement[]> = new Map();
   if (linkPatterns.track) {
     linkElements.set(
       ResourceType.Track,
@@ -326,7 +326,7 @@ export function findBestMatchingResourceLinks(
   }
 
   const ancestorPairs: {
-    pairs: ClosestNodeAncestor<HTMLLinkElement, HTMLLinkElement>[],
+    pairs: ClosestNodeAncestor<HTMLAnchorElement, HTMLAnchorElement>[],
     firstType: ResourceType,
     secondType: ResourceType
   }[] = []
