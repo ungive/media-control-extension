@@ -502,6 +502,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
     this.progressElementObserver.addMutationListener(this.#onProgressElementMutated.bind(this))
     this.progressElementObserver.addMutationStoppedListener(
       this.#onProgressElementStoppedMutating.bind(this))
+    navigation.addEventListener('navigate', this.#onPageNavigation.bind(this));
   }
 
   start(): boolean {
@@ -575,6 +576,14 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
         this.#handleUpdate();
       }
     }
+  }
+
+  #onPageNavigation(event: NavigateEvent) {
+    // Make sure to look for resource links and for metadata attribute buttons
+    // again whenever the user navigates.
+    // FIXME This is not very reliable. The page might still be mutating. It's
+    // probably a good idea to observe the DOM in some way for resource links.
+    this.#handleUpdate();
   }
 
   #handleUpdate() {
