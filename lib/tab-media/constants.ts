@@ -32,7 +32,7 @@ export namespace Constants {
       artist: new RegExp('/artists/'),
     },
     'com.apple.music': {
-      track: undefined,
+      track: new RegExp('(?:/[^\\/]+)?/song/'),
       album: new RegExp('(?:/[^\\/]+)?/album/'),
       artist: new RegExp('(?:/[^\\/]+)?/artist/'),
     },
