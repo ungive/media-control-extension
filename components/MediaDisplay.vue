@@ -301,8 +301,8 @@ function hasFailedFavicon(url?: string) {
 </script>
 
 <template>
-  <div id="root" class="w-full max-w-lg py-2 px-4">
-    <div v-if="!isPopout()" class="flex justify-between my-2">
+  <div id="root" class="w-full max-w-lg py-2 px-4 bg-white dark:bg-neutral-950">
+    <div v-if="!isPopout()" class="flex justify-between mt-2 -mx-0.5">
       <h4 class="flex-1 text-base font-bold leading-none text-gray-600 dark:text-gray-400 ml-[0.1rem]">
         Media Control
       </h4>
@@ -323,14 +323,14 @@ function hasFailedFavicon(url?: string) {
       </div>
     </div>
     <div class="flow-root min-w-[28rem] max-w-[30rem]">
-      <ul role="list" class="divide-y divide-gray-200 dark:divide-neutral-800">
+      <ul role="list" class="divide-y-2 divide-neutral-200 dark:divide-neutral-800/70">
         <template v-for="item in computedItems">
           <li class="py-3 group" v-if="item.state.metadata" :key="item.tabId">
             <div class="flex items-stretch">
               <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
                 <div class="relative w-28 h-28 mt-0.5 group/cover">
                   <img v-if="item.src"
-                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-gray-200 dark:outline-none transition-all duration-50', item.muted ? 'grayscale opacity-30' : '']"
+                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-neutral-200 dark:outline-neutral-800 transition-all duration-50', item.muted ? 'grayscale opacity-30' : '']"
                     :src="item.src" alt="Cover">
                   <PlayCircleIcon v-else-if="item.state.playbackState?.playing && !item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PlayCircleIcon>
                   <PauseCircleIcon v-else-if="!item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
@@ -361,19 +361,19 @@ function hasFailedFavicon(url?: string) {
                         item.state.metadata.title }}</a>
                   </div>
                   <div class="truncate -mt-1 border-" v-if="item.state.metadata?.artist">
-                    <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
+                    <TextWithLinks class="truncate text-gray-700 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                       :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" :buttons="item.metadataButtons"
                       @link-click="openLink(item.tabId, $event.text, $event.href)"/>
                   </div>
                   <div class="truncate -mt-1" v-if="item.state.metadata?.album">
-                    <TextWithLinks class="truncate text-gray-500 dark:text-gray-400" base-class="leading-6"
+                    <TextWithLinks class="truncate text-gray-700 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                       :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" :buttons="item.metadataButtons"
                       @link-click="openLink(item.tabId, $event.text, $event.href)"/>
                   </div>
                 </div>
-                <div class="text-gray-500 truncate dark:text-gray-400"
+                <div class="text-gray-700 truncate dark:text-gray-400"
                   v-if="item.state.playbackState && item.state.playbackState.positionTimestamp && item.state.metadata.duration">
                   <ProgressBar :playing="item.state.playbackState.playing" :position="item.state.playbackState.position"
                     :position-timestamp="item.state.playbackState.positionTimestamp"
@@ -408,12 +408,12 @@ function hasFailedFavicon(url?: string) {
                     </div>
                   </div>
                   <div class="flex-1 min-w-0 ms-2.5 me-2.5" v-if="item.state.source?.siteUrl">
-                    <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
+                    <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors duration-200"
                       @click.prevent="showTab(item.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
                   </div>
                   <div class="flex-shrink-0 ms-2.5 me-0">
                     <button @click="toggleTabMute(item.tabId)" title="Mute"
-                      class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                      class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                       <SpeakerWaveIcon v-if="!item.muted" class="size-4 mt-0.5"></SpeakerWaveIcon>
                       <SpeakerXMarkIcon v-else class="size-4 mt-0.5"></SpeakerXMarkIcon>
                     </button>
