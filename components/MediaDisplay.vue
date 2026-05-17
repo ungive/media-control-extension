@@ -302,7 +302,7 @@ function hasFailedFavicon(url?: string) {
 
 <template>
   <div id="root" class="w-full max-w-lg py-2 px-4 bg-white dark:bg-neutral-950">
-    <div v-if="!isPopout()" class="flex justify-between mt-2 -mx-0.5">
+    <div v-if="!isPopout()" :class="['flex justify-between mt-2 -mx-0.5', computedItems.length === 0 ? 'mb-2' : '']">
       <h4 class="flex-1 text-base font-bold leading-none text-gray-600 dark:text-gray-400 ml-[0.1rem]">
         Media Control
       </h4>
