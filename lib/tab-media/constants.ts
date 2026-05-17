@@ -59,7 +59,7 @@ export namespace Constants {
     'com.youtube': {
       track: new RegExp('/watch'),
       album: undefined,
-      artist: new RegExp('/channel/'),
+      artist: new RegExp('(/channel/|/@[^\\/]+$)'),
     },
     'com.deezer': {
       track: new RegExp('/track/'),
