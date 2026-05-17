@@ -82,9 +82,15 @@ export namespace Constants {
   export const IGNORE_MEDIA_ELEMENT_SELECTORS: {
     [key: string]: string[]
   } = {
+    // FIXME This can at most include the immediate parent due to how we detect
+    // if a selector matches a specific element.
     'com.tidal': [
       // Animated album covers.
       'video[poster^="https://resources.tidal.com"]'
+    ],
+    'com.spotify.open': [
+      // Canvas.
+      'div[class^="canvas"] > video[src*="https://open.spotify.com"]'
     ]
   };
 }
