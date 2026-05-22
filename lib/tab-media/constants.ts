@@ -36,6 +36,11 @@ export namespace Constants {
       album: new RegExp('(?:/[^\\/]+)?/album/'),
       artist: new RegExp('(?:/[^\\/]+)?/artist/'),
     },
+    'com.apple.music.classical': {
+      track: new RegExp('(?:/[^\\/]+)?/song/'),
+      album: new RegExp('(?:/[^\\/]+)?/album/'),
+      artist: new RegExp('(?:/[^\\/]+)?/artist/'),
+    },
     'com.tidal': {
       track: new RegExp('/track/'),
       album: new RegExp('/album/'),
