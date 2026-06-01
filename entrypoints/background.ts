@@ -202,10 +202,11 @@ browser.tabs.onRemoved.addListener(async (tabId) => {
   unregisterTab(tabId);
 });
 
-browser.runtime.onSuspend.addListener(async () => {
-  // TODO what to do on suspend?
-  console.log('on suspend');
-});
+// NOTE This errors in Safari and causes the extension to not work.
+// browser.runtime.onSuspend.addListener(async () => {
+//   // TODO what to do on suspend?
+//   console.log('on suspend');
+// });
 
 async function init() {
   // Observe and listen for popups that connect/disconnect i.e. open/close.
