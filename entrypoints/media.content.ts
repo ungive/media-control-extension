@@ -146,14 +146,7 @@ function onMediaUpdated(event: MediaStateEvent | null) {
   } as RuntimeMessage);
 }
 
-function injectAudioHook() {
-  const script = document.createElement('script');
-  script.src = browser.runtime.getURL('/inject.js');
-  document.head.appendChild(script);
-}
-
 function init() {
-  injectAudioHook();
   mediaObserver = new MediaObserver();
   mediaObserver.addEventListener(onMediaUpdated);
   mediaObserver.start();
