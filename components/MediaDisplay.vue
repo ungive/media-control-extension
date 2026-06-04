@@ -395,7 +395,7 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
       <h4 class="flex-1 text-base font-bold leading-none text-gray-600 dark:text-gray-400 ml-[0.1rem]">
         Media Control
       </h4>
-      <div class="flex-shrink-0 flex items-center space-x-2">
+      <div class="flex-shrink-0 flex items-center space-x-2 -mt-0.5">
         <a v-if="devBannerHiddenState" @click="showDevBanner" title="Show information banner"
           class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-150">
           <InformationCircleIcon class="size-[1.125rem]"></InformationCircleIcon>
