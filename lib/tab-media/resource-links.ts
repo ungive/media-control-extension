@@ -318,7 +318,7 @@ export function findBestMatchingResourceLinks(
     // instead of matching exactly.
     linkElements.set(
       ResourceType.Artist,
-      findResourceLinks(linkPatterns.artist, metadata.artist, true, true, roots)
+      findResourceLinks(linkPatterns.artist, metadata.artist, false, true, roots)
     );
     if ((linkElements.get(ResourceType.Artist)?.length ?? 0) === 0) {
       linkElements.delete(ResourceType.Artist);
