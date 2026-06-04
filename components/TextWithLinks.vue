@@ -46,11 +46,16 @@ function extractComponents(
       }
     ];
   }
+  text = text.normalize('NFC');
   text = text.trim();
+  const normalizedLinks: typeof links = {}
+  for (const key in links) {
+    normalizedLinks[key.normalize('NFC')] = links[key];
+  }
   const upperText = text.toUpperCase();
   const components = new Map<number, TextComponent>();
   const takenIndices = new Set<number>();
-  const entries = Object.entries(links);
+  const entries = Object.entries(normalizedLinks);
   entries.sort((a, b) => b[0].length - a[0].length);
   for (const [key, value] of entries) {
     for (let pos = 0; ;) {

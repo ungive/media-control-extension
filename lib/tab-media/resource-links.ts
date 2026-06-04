@@ -178,27 +178,56 @@ function findPairsWithClosestAncestor<N extends Node>(
   return [];
 }
 
+function normalized(text: string) {
+  // Ensure that e.g. characters with accents are normalized to a single
+  // canonical form, since they can have multiple byte representations.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
+  return text.normalize('NFC');
+}
+
+function matchesResourceLinkText(
+  text: string,
+  linkText: string,
+  caseInsensitive: boolean = false,
+) {
+  const regex = new RegExp(
+    `^${normalized(linkText)}$`,
+    'u' + (caseInsensitive ? 'i' : ''));
+  return regex.test(normalized(text));
+}
+
+function includesResourceLinkText(
+  text: string,
+  linkText: string,
+  caseInsensitive: boolean = false
+) {
+  const regex = new RegExp(
+    `(?<!\\p{L}|\\p{N})${normalized(linkText)}(?!\\p{L}|\\p{N})`,
+    'u' + (caseInsensitive ? 'i' : ''));
+  return regex.test(normalized(text));
+}
+
 /**
  * Finds all resource links under the given list of {@link roots}
  * that conform to the given set of parameters.
  *
  * Only elements are returned whose full path name (with leading slash)
  * match the given {@link pathPattern} and whose innerText matches
- * the given {@link innerText}, either case-sensitive or -insensitive,
+ * the given {@link text}, either case-sensitive or -insensitive,
  * depending on the value of {@link caseInsensitive},
  * and either exactly or merely as a prefix,
  * depending on the value of {@link innerTextStartsWith}.
  *
  * @param pathPattern The pattern to match against the pathname of any URL.
- * @param innerText The innerText that the link element should contain.
- * @param caseInsensitive Whether to match {@link innerText} case-insensitive.
- * @param innerTextIncludes Whether to match {@link innerText} as substring.
+ * @param text The innerText that the link element should contain.
+ * @param caseInsensitive Whether to match {@link text} case-insensitive.
+ * @param innerTextIncludes Whether to match {@link text} as substring.
  * @param roots The set of {@link RootElement} elements to search under.
  * @returns
  */
 function findResourceLinks(
   pathPattern: RegExp,
-  innerText: string,
+  text: string,
   caseInsensitive: boolean = false,
   innerTextIncludes: boolean = false,
   roots: RootElement[] = findRootNodes()
@@ -207,7 +236,7 @@ function findResourceLinks(
   // FIXME Make sure to only show links that point to the same domain, unless
   // e.g. a flag is set to match with a different domain.
 
-  innerText = innerText.trim();
+  text = text.trim();
   const elements: Set<HTMLAnchorElement> = new Set();
   for (const root of roots) {
     const links = root.querySelectorAll<HTMLAnchorElement>('a[href]');
@@ -216,18 +245,16 @@ function findResourceLinks(
       if (!pathPattern.test(url)) {
         continue;
       }
-      const text = element.innerText.trim();
-      if (text.length === 0) {
+      const innerText = element.innerText.trim();
+      if (innerText.length === 0) {
         continue;
       }
       let textMatches = false;
       if (innerTextIncludes) {
-        textMatches = innerText.includes(text)
-          || caseInsensitive && innerText.toUpperCase().includes(text.toUpperCase());
+        textMatches = includesResourceLinkText(text, innerText, caseInsensitive);
       }
       else {
-        textMatches = text === innerText
-          || caseInsensitive && text.toUpperCase() === innerText.toUpperCase();
+        textMatches = matchesResourceLinkText(text, innerText, caseInsensitive);
       }
       if (textMatches) {
         elements.add(element);
@@ -443,7 +470,7 @@ export function findBestMatchingResourceLinks(
         }
         console.assert(text.length > 0);
         const innerText = resourceUrl.innerText.trim();
-        if (!text.includes(innerText)) {
+        if (!includesResourceLinkText(text, innerText)) {
           continue;
         }
         const href = resourceUrl.href;
