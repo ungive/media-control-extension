@@ -6,18 +6,25 @@ import { ProgressElement, ProgressElementPrecision } from "./progress-element";
 import { findBestMatchingResourceLinks, ResourceLinkPatterns, ResourceType } from "./resource-links";
 import { PlaybackStateSource, TabMediaPlaybackState, TabMediaState, TabMediaStateChange } from "./state";
 
+export type ElementOrElementAggregate<E extends Element = Element> =
+  E | { element: E; };
+
+export function resolveElement<E extends Element = Element>(value: ElementOrElementAggregate<E>) {
+  return value instanceof Element ? value : value.element
+}
+
 /**
  * Represents a strategy for observing elements in the DOM.
  */
-export interface IObservationStrategy<E, C extends CallableFunction> {
+export interface IObservationStrategy<E extends ElementOrElementAggregate, C extends CallableFunction> {
 
-  addListeners(element: E, handler: C): void
+  addListener(element: E, handler: C): void
   removeListeners(): void
 }
 
 export type ElementEventCallback<E> = (element: E, event: Event) => void;
 
-export class EventListenerObservationStrategy<E extends EventTarget>
+export class EventListenerObservationStrategy<E extends ElementOrElementAggregate & EventTarget>
   implements IObservationStrategy<E, ElementEventCallback<E>> {
 
   private readonly eventNames: string[]
@@ -34,9 +41,9 @@ export class EventListenerObservationStrategy<E extends EventTarget>
     this.eventNames = [...eventNames];
   }
 
-  addListeners(element: E, handler: ElementEventCallback<E>): void {
+  addListener(element: E, handler: ElementEventCallback<E>): void {
     for (const eventName of this.eventNames) {
-      const callback = (e: Event) => handler(element, e);
+      const callback: EventListener = (e: Event) => handler(element, e);
       element.addEventListener(eventName, callback);
       this.listeners.push({ element, callback });
     }
@@ -63,16 +70,16 @@ export type MutationObserverObserveArgsFactory<E>
 export type ElementMutationsCallback<E> =
   (element: E, mutations: MutationRecord[]) => void;
 
-export class NodeMutationObservationStrategy<E>
+export class NodeMutationObservationStrategy<E extends ElementOrElementAggregate>
   implements IObservationStrategy<E, ElementMutationsCallback<E>> {
 
   private readonly mutationObserver: MutationObserver
   private readonly mutationObserveArgsFactory: MutationObserverObserveArgsFactory<E>
 
-  private listeners: {
+  private elementListeners: Map<Element, {
     element: E
-    callback: ElementMutationsCallback<E>
-  }[] = []
+    callbacks: ElementMutationsCallback<E>[]
+  }> = new Map()
 
   constructor(mutationObserveArgsFactory: MutationObserverObserveArgsFactory<E>) {
     this.mutationObserver = new MutationObserver(this.#mutationCallback.bind(this));
@@ -80,13 +87,39 @@ export class NodeMutationObservationStrategy<E>
   }
 
   #mutationCallback(mutations: MutationRecord[], observer: MutationObserver) {
-    for (const listener of this.listeners) {
-      listener.callback(listener.element, mutations);
+    const elementMutations: Map<Element, MutationRecord[]> = new Map()
+    for (const mutation of mutations) {
+      if (!(mutation.target instanceof Element)) {
+        console.error("The mutation target is not an element", mutation.target);
+        continue;
+      }
+      const listener = this.elementListeners.get(mutation.target);
+      if (!listener || listener.callbacks.length === 0) {
+        console.error("There are no listeners for this mutation target", mutation.target);
+        return;
+      }
+      if (!elementMutations.has(mutation.target)) {
+        elementMutations.set(mutation.target, []);
+      }
+      elementMutations.get(mutation.target)!.push(mutation);
     }
+    elementMutations.forEach((mutations, element) => {
+      const listener = this.elementListeners.get(element)!;
+      for (const callback of listener.callbacks) {
+        callback(listener.element, mutations);
+      }
+    });
   }
 
-  addListeners(element: E, callback: ElementMutationsCallback<E>): void {
-    this.listeners.push({ element, callback });
+  addListener(element: E, callback: ElementMutationsCallback<E>): void {
+    const resolvedElement: Element = resolveElement(element);
+    if (!this.elementListeners.has(resolvedElement)) {
+      this.elementListeners.set(resolvedElement, {
+        element: element,
+        callbacks: [],
+      });
+    }
+    this.elementListeners.get(resolvedElement)!.callbacks.push(callback);
     const args = this.mutationObserveArgsFactory(element);
     this.mutationObserver.observe(
       args.target,
@@ -96,7 +129,7 @@ export class NodeMutationObservationStrategy<E>
 
   removeListeners(): void {
     this.mutationObserver.disconnect();
-    this.listeners = [];
+    this.elementListeners.clear();
   }
 }
 
@@ -112,7 +145,7 @@ export interface IObserver<C extends CallableFunction> {
  * with the option to restart observation if it is suspected
  * that the source might supply a different element at another point in time.
  */
-export class ElementGroupObserver<E extends Object, C extends CallableFunction>
+export class ElementGroupObserver<E extends ElementOrElementAggregate, C extends CallableFunction>
   implements IObserver<C> {
 
   private readonly elementSource: IElementSource<E>
@@ -137,7 +170,7 @@ export class ElementGroupObserver<E extends Object, C extends CallableFunction>
     this.eventCallbacks.push(callback);
     if (this.currentElements.length > 0) {
       for (const element of this.currentElements) {
-        this.observationStrategy.addListeners(element, callback);
+        this.observationStrategy.addListener(element, callback);
       }
     }
     else {
@@ -177,7 +210,7 @@ export class ElementGroupObserver<E extends Object, C extends CallableFunction>
     this.pendingEventCallbacks = [];
     for (const element of this.currentElements) {
       for (const callback of callbacks) {
-        this.observationStrategy.addListeners(element, callback);
+        this.observationStrategy.addListener(element, callback);
       }
     }
     return true;
