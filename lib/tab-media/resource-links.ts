@@ -424,9 +424,10 @@ export function findBestMatchingResourceLinks(
     }
   }
 
-  // Apply any URLs that have been found as a fallback.
+  // Apply any other URLs that have been found as a fallback. URLs from pairs
+  // that have a common ancestor are prioritized this way.
   for (const resourceType of [ResourceType.Track, ResourceType.Album, ResourceType.Artist]) {
-    if (!urls.has(resourceType) && linkElements.has(resourceType)) {
+    if (linkElements.has(resourceType)) {
       for (const resourceUrl of linkElements.get(resourceType)!) {
         let text = '';
         switch (resourceType) {
