@@ -297,13 +297,16 @@ export function findBestMatchingResourceLinks(
         findResourceLinks(linkPatterns.album, metadata.title, false, false, roots)
       );
     }
-    if ((linkElements.get(ResourceType.Album)?.length ?? 0) === 0) {
-      // Sometimes the album name is in all uppercase (like on TIDAL).
-      linkElements.set(
-        ResourceType.Album,
-        findResourceLinks(linkPatterns.album, metadata.album, true, false, roots)
-      );
-    }
+    // TODO Are there other sites that have the album name in uppercase? TIDAL
+    // doesn't anymore. Might be worth considering to add this back, but not as
+    // "case-insensitive", rather as "uppercase only".
+    // if ((linkElements.get(ResourceType.Album)?.length ?? 0) === 0) {
+    //   // Sometimes the album name is in all uppercase (like on TIDAL).
+    //   linkElements.set(
+    //     ResourceType.Album,
+    //     findResourceLinks(linkPatterns.album, metadata.album, false, false, roots)
+    //   );
+    // }
     if ((linkElements.get(ResourceType.Album)?.length ?? 0) === 0) {
       linkElements.delete(ResourceType.Album);
     }
