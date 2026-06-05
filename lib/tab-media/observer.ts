@@ -302,6 +302,9 @@ export class PlaybackPositionProgressElementObserver
     // FIXME what if the progress element is removed or replaced?
     // in that case we would rely on an invalid element the whole time.
 
+    // TODO We can probably filter out all progress elements where the minimum
+    // is not equal to 0, no?
+
     const nowTimestamp = Date.now();
     for (const mutation of mutations) {
       if (!mutation.attributeName) {
@@ -359,7 +362,7 @@ export class PlaybackPositionProgressElementObserver
       let newValue = realNewValue;
       let lastValue = state.lastValue;
       if (newValue <= lastValue) {
-        // The new value must be larger than the old value;
+        // The new value must be larger than the old value.
         state.lastValue = realNewValue;
         state.lastValueTimestamp = nowTimestamp;
         continue;
@@ -380,6 +383,7 @@ export class PlaybackPositionProgressElementObserver
         positionDelta = newValue - lastValue;
         epsilon = Constants.PROGRESS_SECS_EPSILON;
       } else {
+        // FIXME This is triggered sometimes on Spotify.
         console.assert(state.progressElement.valuePrecision
           === ProgressElementPrecision.Milliseconds)
       }
@@ -394,6 +398,7 @@ export class PlaybackPositionProgressElementObserver
           state.progressElement.valuePrecision satisfies never
           break;
       }
+      // FIXME Can't the update interval be derived instead of setting it?
       state.progressElement.updateInterval = updateIntervalMillis
 
       const difference = Math.abs(timeDeltaMillis - positionDelta);
@@ -490,7 +495,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
   private observerState: MediaObserverState = MediaObserverState.Idle
 
   private mediaElementObserver: MediaElementObserver;
-  private progressElementObserver: PlaybackPositionProgressElementObserver;
+  // private progressElementObserver: PlaybackPositionProgressElementObserver;
   private currentMediaElement: HTMLMediaElement | null = null;
   private currentProgressElement: ProgressElement | null = null;
   private currentProgressElementMutating: boolean | undefined = undefined;
@@ -528,13 +533,14 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
         ['play', 'pause', 'timeupdate', 'durationchange']
       )
     );
-    this.progressElementObserver = new PlaybackPositionProgressElementObserver(
-      new TabProgressElementSource()
-    );
+    // TODO The progress element observer is not really needed at the moment.
+    // this.progressElementObserver = new PlaybackPositionProgressElementObserver(
+    //   new TabProgressElementSource()
+    // );
     this.mediaElementObserver.addEventListener(this.#onMediaElementUpdated.bind(this))
-    this.progressElementObserver.addMutationListener(this.#onProgressElementMutated.bind(this))
-    this.progressElementObserver.addMutationStoppedListener(
-      this.#onProgressElementStoppedMutating.bind(this))
+    // this.progressElementObserver.addMutationListener(this.#onProgressElementMutated.bind(this))
+    // this.progressElementObserver.addMutationStoppedListener(
+    //   this.#onProgressElementStoppedMutating.bind(this))
     navigation.addEventListener('navigate', this.#onPageNavigation.bind(this));
   }
 
@@ -543,7 +549,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
       return true;
     this.observerState = MediaObserverState.Observing;
     this.mediaElementObserver.restart();
-    this.progressElementObserver.restart();
+    // this.progressElementObserver.restart();
     return true;
   }
 
@@ -552,7 +558,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
       return false;
     this.observerState = MediaObserverState.Idle;
     this.mediaElementObserver.stop();
-    this.progressElementObserver.stop();
+    // this.progressElementObserver.stop();
     this.currentMediaElement = null;
     this.currentProgressElement = null;
     this.currentProgressElementMutating = undefined;
@@ -596,6 +602,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
   }
 
   #onProgressElementMutated(element: ProgressElement) {
+    console.log("#onProgressElementMutated", element);
     this.currentProgressElement = element;
     this.currentProgressElementMutating = true;
     this.useEstimatedTrackStartTime = false;
@@ -724,9 +731,11 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
         Date.now()
       );
     }
-    else if (this.useEstimatedTrackStartTime) {
-      playbackState = this.#estimatedPlaybackPosition(isPlaying);
-    }
+    // FIXME Do we even need this anymore?
+    // else if (this.useEstimatedTrackStartTime) {
+    //   playbackState = this.#estimatedPlaybackPosition(isPlaying);
+    //   console.log("C", playbackState);
+    // }
     else {
       return null;
     }
