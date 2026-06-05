@@ -36,6 +36,7 @@ export namespace Constants {
       album: new RegExp('(?:/[^\\/]+)?/album/'),
       artist: new RegExp('(?:/[^\\/]+)?/artist/'),
     },
+    // FIXME Duplicate code
     'com.apple.music.classical': {
       track: new RegExp('(?:/[^\\/]+)?/song/'),
       album: new RegExp('(?:/[^\\/]+)?/album/'),
@@ -62,6 +63,12 @@ export namespace Constants {
       artist: new RegExp('/channel/'),
     },
     'com.youtube': {
+      track: new RegExp('/watch'),
+      album: undefined,
+      artist: new RegExp('(/channel/|/@[^\\/]+$)'),
+    },
+    // FIXME Duplicate code
+    'com.youtube-nocookie': {
       track: new RegExp('/watch'),
       album: undefined,
       artist: new RegExp('(/channel/|/@[^\\/]+$)'),
