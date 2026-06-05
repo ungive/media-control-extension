@@ -128,6 +128,7 @@ function installMessageHandlers() {
 
 export default defineContentScript({
   matches: ['<all_urls>'],
+  allFrames: true,
   runAt: "document_start",
   // The injection code needs to be executed directly within the web page, i.e.
   // in the main world, otherwise the changes are not visible to the page code.
