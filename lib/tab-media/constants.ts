@@ -103,6 +103,10 @@ export namespace Constants {
     'com.spotify.open': [
       // Canvas.
       'div[class^="canvas"] > video[src*="https://open.spotify.com"]'
-    ]
+    ],
+    'com.discord': [
+      // Notifications and such.
+      'audio[src^="/assets/"][src$=".mp3"]'
+    ],
   };
 }
