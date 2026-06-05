@@ -33,9 +33,23 @@ const livePositionDisplay = computed(() => formatPosition(livePosition.value));
 let interval: NodeJS.Timeout | null = null;
 
 function formatPosition(positionMillis: number) {
-  const minutes = (positionMillis / 60000) | 0;
-  const seconds = ((positionMillis % 60000) / 1000) | 0;
-  return minutes.toString() + ':' + seconds.toString().padStart(2, '0');
+  const days = (positionMillis / (24 * 60 * 60 * 1000)) | 0;
+  const hours = ((positionMillis / (60 * 60 * 1000)) % 24) | 0;
+  const minutes = ((positionMillis / (60 * 1000)) % 60) | 0;
+  const seconds = ((positionMillis % (60 * 1000)) / 1000) | 0;
+  const parts = [];
+  if (days > 0) {
+    parts.push(days.toString());
+  }
+  if (parts.length > 0 || hours > 0) {
+    parts.push(hours.toString());
+  }
+  parts.push(minutes.toString());
+  parts.push(seconds.toString());
+  for (let i = 1; i < parts.length; i++) {
+    parts[i] = parts[i].padStart(2, '0');
+  }
+  return parts.join(':');
 }
 
 function clearCurrentInterval() {
