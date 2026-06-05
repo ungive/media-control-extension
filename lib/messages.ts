@@ -1,6 +1,6 @@
 
 export enum ExtensionMessage {
-  CurrentMedia,
+  CurrentMedia = 0,
   PopoutOpened,
   PopoutClosed,
   PopoutState,
@@ -26,9 +26,11 @@ export enum PopoutMessage {
   WindowSize = 300,
 }
 
+export type RuntimeMessageType = ExtensionMessage | TabMessage | PopupMessage | PopoutMessage
+
 export interface RuntimeMessage {
-  type: ExtensionMessage | TabMessage | PopupMessage | PopoutMessage
-  payload: any
+  type: RuntimeMessageType
+  payload?: any
 }
 
 export interface MediaControlCapabilities {
@@ -69,5 +71,31 @@ export interface OpenLinkPayload {
 }
 
 export interface SeekPositionPayload {
+  position: number
+}
+
+export enum MediaSessionMessage {
+  ActionPlay = 0,
+  ActionPause,
+  ActionSeekTo,
+  ActionPreviousTrack,
+  ActionNextTrack,
+}
+
+export type WindowMessageType = MediaSessionMessage
+
+export interface WindowMessage {
+  id: string
+  type: WindowMessageType
+  payload?: any
+}
+
+export interface WindowResponseMessage {
+  messageId: string
+  ok: boolean
+  payload?: any
+}
+
+export interface ActionSeekToPayload {
   position: number
 }

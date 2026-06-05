@@ -1,4 +1,4 @@
-import { MediaChangedPayload, OpenLinkPayload, PopupMessage, RuntimeMessage, SeekPositionPayload, TabMessage } from "@/lib/messages";
+import { ActionSeekToPayload, MediaChangedPayload, MediaSessionMessage, OpenLinkPayload, PopupMessage, RuntimeMessage, SeekPositionPayload, TabMessage, WindowMessage, WindowMessageType, WindowResponseMessage } from "@/lib/messages";
 import { BrowserMedia } from "@/lib/proto";
 import { MediaStateEvent, MediaObserver } from "@/lib/tab-media/observer";
 import { findRootNodes } from "@/lib/tab-media/resource-links";
@@ -132,7 +132,53 @@ const SEEK_POSITION_RETRY_CONFIG: SeekPositionRetryConfig = {
 
 let seekPositionInterval: SeekPositionRetryInterval | null = null;
 
-browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
+const WINDOW_MESSAGE_RESPONSE_TIMEOUT = 200;
+
+function isWindowResponseMessage(
+  message: unknown,
+): message is WindowResponseMessage {
+  return typeof message === "object" && message !== null &&
+    "messageId" in message && "ok" in message;
+}
+
+function sendWindowMessage(
+  type: WindowMessageType,
+  payload?: any,
+): Promise<boolean> {
+  return new Promise(resolve => {
+    const id = crypto.randomUUID();
+    const cleanup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("message", listener);
+    }
+    const listener = (event: MessageEvent) => {
+      if (event.source !== window) {
+        return;
+      }
+      const message = event.data;
+      if (!isWindowResponseMessage(message)) {
+        return;
+      }
+      if (message.messageId !== id) {
+        return;
+      }
+      cleanup();
+      resolve(message.ok);
+    }
+    const timeout = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, WINDOW_MESSAGE_RESPONSE_TIMEOUT);
+    window.addEventListener("message", listener);
+    window.postMessage({
+      id,
+      type,
+      payload,
+    } as WindowMessage);
+  });
+}
+
+browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
   if (!mediaObserver) {
     console.assert(false, 'Media observer not initialized');
     return;
@@ -150,85 +196,107 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
       }
     }
   }
+  // We always try to prioritize MediaSession action handlers as these are the
+  // functions that are called when the user uses their device's media keys and
+  // they are guaranteed to work most reliably. If no action handler is
+  // registered by the website, then fallback to controlling the media element.
   switch (message.type) {
     case PopupMessage.PauseMedia: {
-      const mediaElement = mediaObserver.mediaElement;
-      if (mediaElement !== null && !mediaElement.paused) {
-        mediaElement.pause();
-        if (mediaElement.paused) {
-          // Always overwrite the last interacted element with this element
-          // because when media is playing this is definitely the correct one.
-          lastInteractedMediaElement = mediaElement;
+      const ok = await sendWindowMessage(MediaSessionMessage.ActionPause);
+      if (!ok) {
+        const mediaElement = mediaObserver.mediaElement;
+        if (mediaElement !== null && !mediaElement.paused) {
+          mediaElement.pause();
+          if (mediaElement.paused) {
+            // Always overwrite the last interacted element with this element
+            // because when media is playing this is definitely the correct one.
+            lastInteractedMediaElement = mediaElement;
+          }
         }
       }
       break;
     }
     case PopupMessage.PlayMedia: {
-      const mediaElement = mediaObserver.mediaElement;
-      if (mediaElement !== null && mediaElement.paused) {
-        mediaElement.play();
-        if (lastInteractedMediaElement === null && !mediaElement.paused) {
-          // Only set the last interacted element if it's not already set
-          // and triggering its playing state ended up doing something.
-          lastInteractedMediaElement = mediaElement;
+      const ok = await sendWindowMessage(MediaSessionMessage.ActionPlay);
+      if (!ok) {
+        const mediaElement = mediaObserver.mediaElement;
+        if (mediaElement !== null && mediaElement.paused) {
+          mediaElement.play();
+          if (lastInteractedMediaElement === null && !mediaElement.paused) {
+            // Only set the last interacted element if it's not already set
+            // and triggering its playing state ended up doing something.
+            lastInteractedMediaElement = mediaElement;
+          }
         }
-      }
-      else if (lastInteractedMediaElement !== null && lastInteractedMediaElement.paused) {
-        lastInteractedMediaElement.play();
-        if (lastInteractedMediaElement.paused) {
-          // Still paused, so remove it.
-          lastInteractedMediaElement = null;
+        else if (lastInteractedMediaElement !== null && lastInteractedMediaElement.paused) {
+          lastInteractedMediaElement.play();
+          if (lastInteractedMediaElement.paused) {
+            // Still paused, so remove it.
+            lastInteractedMediaElement = null;
+          }
         }
       }
       break;
     }
     case PopupMessage.SeekStart: {
-      const mediaElement = mediaObserver.mediaElement;
-      if (mediaElement !== null) {
-        if (mediaElement.paused) {
-          mediaElement.play();
-        }
-        if (!mediaElement.paused) {
-          mediaElement.currentTime = 0;
+      const ok = await sendWindowMessage(MediaSessionMessage.ActionPreviousTrack);
+      if (!ok) {
+        const mediaElement = mediaObserver.mediaElement;
+        if (mediaElement !== null) {
+          if (mediaElement.paused) {
+            mediaElement.play();
+          }
+          if (!mediaElement.paused) {
+            mediaElement.currentTime = 0;
+          }
         }
       }
       break;
     }
     case PopupMessage.SeekPosition: {
-      const mediaElement = mediaObserver.mediaElement;
       const seekPositionPayload = message.payload as SeekPositionPayload;
-      if (mediaElement !== null) {
-        const oldPosition = mediaElement.currentTime;
-        const newPosition = seekPositionPayload.position;
-        if (mediaElement.paused) {
-          mediaElement.play();
-        }
-        if (!mediaElement.paused) {
-          // NOTE If this ever does not work, we could use the current progress
-          // element and click on the respective position in the DOM instead.
-          seekPositionInterval = new SeekPositionRetryInterval(
-            mediaElement, newPosition, oldPosition, SEEK_POSITION_RETRY_CONFIG);
+      let ok = await sendWindowMessage(MediaSessionMessage.ActionSeekTo, {
+        position: seekPositionPayload.position,
+      } as ActionSeekToPayload);
+      ok = ok && await sendWindowMessage(MediaSessionMessage.ActionPlay);
+      if (!ok) {
+        const mediaElement = mediaObserver.mediaElement;
+        if (mediaElement !== null) {
+          const oldPosition = mediaElement.currentTime;
+          const newPosition = seekPositionPayload.position;
+          if (mediaElement.paused) {
+            mediaElement.play();
+          }
+          if (!mediaElement.paused) {
+            // NOTE If this ever does not work, we could use the current progress
+            // element and click on the respective position in the DOM instead.
+            seekPositionInterval = new SeekPositionRetryInterval(
+              mediaElement, newPosition, oldPosition, SEEK_POSITION_RETRY_CONFIG);
+          }
         }
       }
       break;
     }
     case PopupMessage.NextTrack: {
-      const mediaElement = mediaObserver.mediaElement;
-      if (mediaElement !== null) {
-        if (isNaN(mediaElement.duration)) {
-          console.error("Cannot skip to the next track: The duration is not a number");
-          break;
-        }
-        if (!isFinite(mediaElement.duration)) {
-          console.error("Cannot skip to the next track: The duration is not finite");
-          break;
-        }
-        if (mediaElement.paused) {
-          mediaElement.play();
-        }
-        if (!mediaElement.paused) {
-          // Add a few seconds so it doesn't play the last few seconds.
-          mediaElement.currentTime = mediaElement.duration + 2;
+      const ok = await sendWindowMessage(MediaSessionMessage.ActionNextTrack);
+      if (!ok) {
+        const mediaElement = mediaObserver.mediaElement;
+        if (mediaElement !== null) {
+          if (isNaN(mediaElement.duration)) {
+            console.error("Cannot skip to the next track: The duration is not a number");
+            break;
+          }
+          if (!isFinite(mediaElement.duration)) {
+            console.error("Cannot skip to the next track: The duration is not finite");
+            break;
+          }
+          if (mediaElement.paused) {
+            mediaElement.play();
+          }
+          if (!mediaElement.paused) {
+            // Add a few seconds so it doesn't play the last few seconds.
+            mediaElement.currentTime = mediaElement.duration + 2;
+          }
         }
       }
       break;

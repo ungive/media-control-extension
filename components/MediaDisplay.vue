@@ -494,7 +494,7 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                   <div class="flex-shrink-0 flex">
                     <div class="flex-shrink-0 -ms-0.5"
                       :class="[item.controls.seekStart ? '' : 'opacity-40 cursor-default pointer-events-none']">
-                      <a @click="seekStart(item.tabId)" title="Replay this track"
+                      <a @click="seekStart(item.tabId)" title="Rewind"
                         class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <ArrowUturnLeftIcon class="size-4 mt-0.5"></ArrowUturnLeftIcon>
                       </a>
