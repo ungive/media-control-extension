@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --background-dark: #0c0c0c;
-  --background-light: #FFFFFF;
+  --background-dark-values: 12 12 12;
+  --background-light-values: 255 255 255;
+  --background-dark: rgb(var(--background-dark-values));
+  --background-light: rgb(var(--background-light-values));
 }
 
 html {
