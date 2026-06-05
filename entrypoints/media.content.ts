@@ -42,22 +42,95 @@ function openTextLink(text: string) {
   }
 }
 
-// The period in milliseconds for which to retry seeking, so long as seeking
-// doesn't work on the first attempt or with any of the retry attempts.
-const SEEK_POSITION_RETRY_PERIOD = 2000; // 1000
+interface SeekPositionRetryConfig {
+  intervalFrequency: number
+  retryPeriod: number
+  verifyPeriod: number
+  epsilon: number
+}
 
-const SEEK_POSITION_VERIFY_PERIOD = 1000; // 250
+class SeekPositionRetryInterval {
 
-// The frequency at which to retry in milliseconds. Arbitrary, but high enough
-// for a 30 FPS video to hopefully not show the next frame of the old position.
-const SEEK_POSITION_RETRY_FREQUENCY = 1000 / 30; // 33.3ms
+  private timestamp: number
+  private interval: NodeJS.Timeout | null = null;
+  private lastUpdateTimestamp: number | null = null
+  private lastMillis: number | null = null
 
-const SEEK_POSITION_EPSILON_SECONDS = 500 / 1000;
+  constructor(
+    private mediaElement: HTMLMediaElement,
+    private newPosition: number,
+    private oldPosition: number,
+    private config: SeekPositionRetryConfig,
+  ) {
+    this.timestamp = new Date().getTime();
+    this.interval = setInterval(
+      this.#intervalCallback.bind(this), this.config.intervalFrequency);
+    // A short timeout seems to be required for YouTube.
+    setTimeout(this.#intervalCallback.bind(this), 0);
+  }
 
-let seekPositionInterval: NodeJS.Timeout | null = null;
-let seekPositionTimestamp: number | null = null
-let seekPositionLastUpdateTimestamp: number | null = null
-let seekPositionLastMillis: number | null = null
+  clear() {
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  }
+
+  #intervalCallback() {
+    const epsilonSeconds = this.config.epsilon / 1000;
+    const nowTimestamp = new Date().getTime();
+    const startTimeDelta = nowTimestamp - this.timestamp!;
+    const currentPosition = this.mediaElement.currentTime;
+    const oldPositionDelta = Math.abs(currentPosition - this.oldPosition);
+    const newPositionDelta = Math.abs(currentPosition - this.newPosition);
+    // Seeking is successful, when the seek position was updated at
+    // least once, when the adjusted current playback position is closer
+    // to the target position than to the old playback position and when
+    // the delta is less than the acceptable epsilon.
+    let done = false;
+    if (this.lastUpdateTimestamp !== null &&
+        newPositionDelta < oldPositionDelta &&
+        newPositionDelta < epsilonSeconds) {
+      const verifyDelta = nowTimestamp - this.lastUpdateTimestamp;
+      if (verifyDelta < this.config.verifyPeriod) {
+        const currentPositionMillis = Math.floor(currentPosition * 1000);
+        // If seeking the playback position was successful and it is
+        // either at or advancing past the last seeked position, then we
+        // can stop verifying and retrying early, as the player is now
+        // very likely to keep playing from the target position.
+        if (this.lastMillis !== null &&
+            currentPositionMillis >= this.lastMillis &&
+            Math.abs(currentPositionMillis - this.lastMillis) < epsilonSeconds) {
+          done = true;
+        } else {
+          this.lastMillis = currentPositionMillis;
+          return;
+        }
+      } else {
+        done = true;
+      }
+    }
+    if (done || startTimeDelta > this.config.retryPeriod) {
+      clearInterval(this.interval!);
+      this.interval = null;
+      return;
+    }
+    this.mediaElement.currentTime = this.newPosition;
+    this.lastUpdateTimestamp = new Date().getTime();
+  }
+}
+
+const SEEK_POSITION_RETRY_CONFIG: SeekPositionRetryConfig = {
+  // High enough that the web page is not being spammed with updates, but low
+  // enough (33.3ms) that 30 FPS video will hopefully not show the next frame of
+  // the old playback position
+  intervalFrequency: 1000 / 30,
+  retryPeriod: 1000,
+  verifyPeriod: 250,
+  epsilon: 500,
+};
+
+let seekPositionInterval: SeekPositionRetryInterval | null = null;
 
 browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (!mediaObserver) {
@@ -73,7 +146,7 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
       case PopupMessage.SeekStart:
       case PopupMessage.SeekPosition:
       case PopupMessage.NextTrack: {
-        clearInterval(seekPositionInterval);
+        seekPositionInterval.clear();
       }
     }
   }
@@ -133,53 +206,8 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
         if (!mediaElement.paused) {
           // NOTE If this ever does not work, we could use the current progress
           // element and click on the respective position in the DOM instead.
-          const seekFunction = function () {
-            const nowTimestamp = new Date().getTime();
-            const startTimeDelta = nowTimestamp - seekPositionTimestamp!;
-            const currentPosition = mediaElement.currentTime;
-            const oldPositionDelta = Math.abs(currentPosition - oldPosition);
-            const newPositionDelta = Math.abs(currentPosition - newPosition);
-            // Seeking is successful, when the seek position was updated at
-            // least once, when the adjusted current playback position is closer
-            // to the target position than to the old playback position and when
-            // the delta is less than the acceptable epsilon.
-            let done = false;
-            if (seekPositionLastUpdateTimestamp !== null &&
-                newPositionDelta < oldPositionDelta &&
-                newPositionDelta < SEEK_POSITION_EPSILON_SECONDS) {
-              const verifyDelta = nowTimestamp - seekPositionLastUpdateTimestamp;
-              if (verifyDelta < SEEK_POSITION_VERIFY_PERIOD) {
-                const currentPositionMillis = Math.floor(currentPosition * 1000);
-                // If seeking the playback position was successful and it is
-                // either at or advancing past the last seeked position, then we
-                // can stop verifying and retrying early, as the player is now
-                // very likely to keep playing from the target position.
-                if (seekPositionLastMillis !== null &&
-                    currentPositionMillis >= seekPositionLastMillis &&
-                    Math.abs(currentPositionMillis - seekPositionLastMillis) < SEEK_POSITION_EPSILON_SECONDS) {
-                  done = true;
-                } else {
-                  seekPositionLastMillis = currentPositionMillis;
-                  return;
-                }
-              } else {
-                done = true;
-              }
-            }
-            if (done || startTimeDelta > SEEK_POSITION_RETRY_PERIOD) {
-              clearInterval(seekPositionInterval!);
-              seekPositionInterval = null;
-              seekPositionTimestamp = null;
-              seekPositionLastUpdateTimestamp = null;
-              return;
-            }
-            mediaElement.currentTime = newPosition;
-            seekPositionLastUpdateTimestamp = new Date().getTime();
-          };
-          seekPositionTimestamp = new Date().getTime();
-          seekPositionInterval = setInterval(seekFunction, SEEK_POSITION_RETRY_FREQUENCY);
-          // A short timeout seems to be required for YouTube.
-          setTimeout(seekFunction, 0);
+          seekPositionInterval = new SeekPositionRetryInterval(
+            mediaElement, newPosition, oldPosition, SEEK_POSITION_RETRY_CONFIG);
         }
       }
       break;
