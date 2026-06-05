@@ -178,6 +178,10 @@ function sendWindowMessage(
   });
 }
 
+// Prevent media from disappearing for a few seconds during control operations
+// like skipping a song or rewinding to the previous track.
+const EMPTY_MEDIA_PREVENT_DURATION = 2500;
+
 browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
   if (!mediaObserver) {
     console.assert(false, 'Media observer not initialized');
@@ -242,6 +246,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
       break;
     }
     case PopupMessage.SeekStart: {
+      mediaObserver.preventEmptyMediaTemporarily(EMPTY_MEDIA_PREVENT_DURATION);
       const ok = await sendWindowMessage(MediaSessionMessage.ActionPreviousTrack);
       if (!ok) {
         const mediaElement = mediaObserver.mediaElement;
@@ -281,6 +286,7 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
       break;
     }
     case PopupMessage.NextTrack: {
+      mediaObserver.preventEmptyMediaTemporarily(EMPTY_MEDIA_PREVENT_DURATION);
       const ok = await sendWindowMessage(MediaSessionMessage.ActionNextTrack);
       if (!ok) {
         const mediaElement = mediaObserver.mediaElement;

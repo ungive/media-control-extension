@@ -507,6 +507,9 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
 
   private eventCallbacks: (MediaStateEventCallback)[] = []
 
+  private temporaryPinEndTimestamp: number | null = null
+  private temporaryPinTimeout: NodeJS.Timeout | null = null
+
   static createMediaElementFilter(
     options: MediaElementFilterOptions
   ): IElementFilter<HTMLMediaElement> {
@@ -584,8 +587,26 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
     return this.currentMediaElement
   }
 
+  /**
+   * Hints that there is likely a media update that should be handled.
+   */
   updateHint() {
     this.#handleUpdate();
+  }
+
+  /**
+   * Pins recent media temporarily so that media does not vanish.
+   */
+  preventEmptyMediaTemporarily(durationMillis: number) {
+    this.temporaryPinEndTimestamp = new Date().getTime() + durationMillis;
+  }
+
+  #resetTemporaryPin() {
+    if (this.temporaryPinTimeout) {
+      clearTimeout(this.temporaryPinTimeout);
+    }
+    this.temporaryPinEndTimestamp = null;
+    this.temporaryPinTimeout = null;
   }
 
   #onMediaElementUpdated(element: HTMLMediaElement) {
@@ -606,7 +627,6 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
   }
 
   #onProgressElementMutated(element: ProgressElement) {
-    console.log("#onProgressElementMutated", element);
     this.currentProgressElement = element;
     this.currentProgressElementMutating = true;
     this.useEstimatedTrackStartTime = false;
@@ -633,6 +653,19 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
   #handleUpdate() {
     let state = this.#currentMediaState();
     if (state === null) {
+      if (this.temporaryPinEndTimestamp !== null) {
+        const nowTimestamp = new Date().getTime();
+        if (nowTimestamp < this.temporaryPinEndTimestamp) {
+          if (!this.temporaryPinTimeout) {
+            this.temporaryPinTimeout = setTimeout(() => {
+              this.#resetTemporaryPin();
+              this.#handleUpdate();
+            }, this.temporaryPinEndTimestamp - nowTimestamp);
+          }
+          return;
+        }
+        this.#resetTemporaryPin();
+      }
       for (const callback of this.eventCallbacks) {
         callback(null);
       }
