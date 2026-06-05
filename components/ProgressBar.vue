@@ -75,7 +75,8 @@ function onProgressClicked(event: PointerEvent) {
   const targetPosition = fractionOffset * props.duration!;
   console.log(targetPosition, Math.floor(targetPosition / 60), targetPosition % 60);
   emit('seek', {
-    position: targetPosition,
+    // Floor the value to prevent the player from rounding it up.
+    position: Math.floor(targetPosition),
     originalEvent: event
   });
 }
