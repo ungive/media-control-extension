@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { isPopout } from '@/entrypoints/popup/popout';
-import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, OpenLinkPayload, PopoutStatePaylaod, PopupMessage, RuntimeMessage, SeekPositionPayload } from '@/lib/messages';
+import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, OpenLinkPayload, PopoutStatePaylaod, PopupMessage, RuntimeMessage, SeekPositionPayload, TabMediaSource } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, GlobeAltIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from '@heroicons/vue/16/solid';
 import { InformationCircleIcon } from '@heroicons/vue/20/solid';
@@ -21,7 +21,7 @@ const COVER_MIN_REM = 7
 const hasPopout = ref(false)
 
 const items = ref<{
-  tabId: number
+  source: TabMediaSource,
   state: BrowserMedia.MediaState
   // FIXME Group this under "clientState" or a similar field.
   controls: MediaControlCapabilities
@@ -42,10 +42,10 @@ if (process.env.NODE_ENV === 'development') {
 const tabMuteStates = ref<Record<number, boolean>>({});
 
 watch(items, async (newItems) => {
-  await Promise.all(newItems.map(item => loadMutedState(item.tabId)));
+  await Promise.all(newItems.map(item => loadMutedState(item.source.tabId)));
 
   // Clean up removed tabs.
-  const validTabIds = new Set(newItems.map(i => i.tabId));
+  const validTabIds = new Set(newItems.map(i => i.source.tabId));
   for (const tabId of Object.keys(tabMuteStates.value)) {
     if (!validTabIds.has(Number(tabId))) {
       delete tabMuteStates.value[Number(tabId)];
@@ -129,7 +129,7 @@ onMounted(async () => {
           const parsedState = BrowserMedia.MediaState.fromJSON(m.stateJson);
           const smallestImage = parsedState.images.length > 0 ? selectImage(parsedState.images, 1) : undefined;
           return {
-            tabId: m.tabId,
+            source: m.source,
             state: parsedState,
             controls: m.controls,
             metadataButtons: m.metadataButtons,
@@ -146,7 +146,10 @@ onMounted(async () => {
           if (a.state.playbackState?.positionTimestamp && b.state.playbackState?.positionTimestamp) {
             return b.state.playbackState.positionTimestamp.getTime() - a.state.playbackState.positionTimestamp.getTime()
           }
-          return b.tabId - a.tabId
+          if (a.source.tabId === b.source.tabId) {
+            return b.source.frameId - b.source.frameId;
+          }
+          return b.source.tabId - a.source.tabId;
         });
         break;
       case ExtensionMessage.PopoutOpened:
@@ -187,7 +190,7 @@ onUnmounted(() => {
 const computedItems = computed(() => items.value.map(item => ({
   ...item,
   src: selectImage(item.state.images, COVER_MIN_REM),
-  muted: tabMuteStates.value[item.tabId] ?? false,
+  muted: tabMuteStates.value[item.source.tabId] ?? false,
 })))
 
 async function showTab(tabId: number, closePopup: boolean = true) {
@@ -300,32 +303,38 @@ function getShareLink(
   return undefined;
 }
 
-function pauseMedia(tabId: number) {
-  browser.tabs.sendMessage(tabId, {
+async function sendTabMessage(target: TabMediaSource, message: any) {
+  return browser.tabs.sendMessage(target.tabId, message, {
+    frameId: target.frameId,
+  });
+}
+
+function pauseMedia(target: TabMediaSource) {
+  sendTabMessage(target, {
     type: PopupMessage.PauseMedia
   } as RuntimeMessage);
 }
 
-function playMedia(tabId: number) {
-  browser.tabs.sendMessage(tabId, {
+function playMedia(target: TabMediaSource) {
+  sendTabMessage(target, {
     type: PopupMessage.PlayMedia
   } as RuntimeMessage);
 }
 
-function nextTrack(tabId: number) {
-  browser.tabs.sendMessage(tabId, {
+function nextTrack(target: TabMediaSource) {
+  sendTabMessage(target, {
     type: PopupMessage.NextTrack
   } as RuntimeMessage);
 }
 
-function seekStart(tabId: number) {
-  browser.tabs.sendMessage(tabId, {
+function seekStart(target: TabMediaSource) {
+  sendTabMessage(target, {
     type: PopupMessage.SeekStart
   } as RuntimeMessage);
 }
 
-function seekPosition(tabId: number, position: number) {
-  browser.tabs.sendMessage(tabId, {
+function seekPosition(target: TabMediaSource, position: number) {
+  sendTabMessage(target, {
     type: PopupMessage.SeekPosition,
     payload: {
       position
@@ -339,9 +348,13 @@ function openPopout() {
   } as RuntimeMessage);
 }
 
-async function openLink(tabId: number, text: string, href: string | undefined) {
+async function openLink(
+  target: TabMediaSource,
+  text: string,
+  href: string | undefined,
+) {
   try {
-    await browser.tabs.sendMessage(tabId, {
+    await sendTabMessage(target, {
       type: PopupMessage.OpenLink,
       payload: {
         text,
@@ -349,7 +362,8 @@ async function openLink(tabId: number, text: string, href: string | undefined) {
       } as OpenLinkPayload
     } as RuntimeMessage);
     // On success, focus the tab.
-    showTab(tabId);
+    // FIXME Do not focus the tab, if the link was opened in a new tab.
+    showTab(target.tabId);
   } catch (e) {
     console.error(e);
     // Fall back to opening the link in a new tab.
@@ -423,9 +437,9 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
     <div class="flow-root min-w-[28rem] max-w-[30rem]">
       <ul role="list" class="divide-y-2 divide-neutral-200 dark:divide-neutral-800/70">
         <template v-for="item in computedItems">
-          <li class="py-3 group" v-if="item.state.metadata" :key="item.tabId">
+          <li class="py-3 group" v-if="item.state.metadata" :key="`${item.source.tabId}:${item.source.frameId}`">
             <div class="flex items-stretch">
-              <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
+              <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.source.tabId)">
                 <div class="relative w-28 h-28 mt-0.5 group/cover">
                   <img v-if="item.src"
                     :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-neutral-200 dark:outline-neutral-800 transition-all duration-75', item.muted ? 'grayscale group-hover/cover:grayscale-0 opacity-30 group-hover/cover:opacity-100' : '']"
@@ -458,16 +472,16 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                 </div>
               </div>
               <div class="flex-1 flex flex-col min-h-full min-w-0 ms-4 text-sm -translate-y-[0.0625rem]">
-                <div @click="showTab(item.tabId)" class="flex-grow -translate-y-0.5 cursor-pointer">
+                <div @click="showTab(item.source.tabId)" class="flex-grow -translate-y-0.5 cursor-pointer">
                   <div class="flex">
                     <OverflowingText
                       v-if="item.state.metadata.artist !== undefined || item.state.metadata.album !== undefined"
                       :key="item.state.metadata.title">
-                      <a @click.stop.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)" @contextmenu="!$event.target || !($event.target as HTMLElement).getAttribute('href') ? $event.preventDefault() : null"
+                      <a @click.stop.prevent="showTab(item.source.tabId)" :href="getShareLink(item.state.resourceLinks)" @contextmenu="!$event.target || !($event.target as HTMLElement).getAttribute('href') ? $event.preventDefault() : null"
                         class="text-gray-900  dark:text-white border-b-1 border-transparent hover:border-gray-600 dark:hover:border-gray-400 transition-colors duration-150 leading-6 no-underline font-semibold">{{
                           item.state.metadata.title }}</a>
                     </OverflowingText>
-                    <a v-else @click.stop.prevent="showTab(item.tabId)" :href="getShareLink(item.state.resourceLinks)"
+                    <a v-else @click.stop.prevent="showTab(item.source.tabId)" :href="getShareLink(item.state.resourceLinks)"
                       class="text-gray-900  dark:text-white underline underline-offset-4 decoration-transparent hover:decoration-gray-600 dark:hover:decoration-gray-400 transition-colors duration-150 leading-5 font-semibold">{{
                         item.state.metadata.title }}</a>
                   </div>
@@ -475,18 +489,18 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                     <TextWithLinks class="truncate text-gray-700 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                       :text="item.state.metadata?.artist" :links="item.state.resourceLinks?.artistUrl" :buttons="item.metadataButtons"
-                      @link-click="openLink(item.tabId, $event.text, $event.href)"/>
+                      @link-click="openLink(item.source, $event.text, $event.href)"/>
                   </div>
                   <div class="truncate -mt-1" v-if="item.state.metadata?.album">
                     <TextWithLinks class="truncate text-gray-700 dark:text-gray-400" base-class="leading-6"
                       link-class="no-underline border-b-1 hover:text-gray-700 hover:dark:text-gray-300 border-gray-400 dark:border-gray-600 hover:border-gray-700 dark:hover:border-gray-400 transition-colors duration-200"
                       :text="item.state.metadata?.album" :links="item.state.resourceLinks?.albumUrl" :buttons="item.metadataButtons" :match-buttons-entirely="true"
-                      @link-click="openLink(item.tabId, $event.text, $event.href)"/>
+                      @link-click="openLink(item.source, $event.text, $event.href)"/>
                   </div>
                 </div>
                 <div class="text-gray-700 dark:text-gray-400"
                   v-if="item.state.playbackState && item.state.playbackState.positionTimestamp && item.state.metadata.duration">
-                  <ProgressBar @seek="seekPosition(item.tabId, $event.position)" :playing="item.state.playbackState.playing" :position="item.state.playbackState.position"
+                  <ProgressBar @seek="seekPosition(item.source, $event.position)" :playing="item.state.playbackState.playing" :position="item.state.playbackState.position"
                     :position-timestamp="item.state.playbackState.positionTimestamp"
                     :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
                 </div>
@@ -494,25 +508,25 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                   <div class="flex-shrink-0 flex">
                     <div class="flex-shrink-0 -ms-0.5"
                       :class="[item.controls.seekStart ? '' : 'opacity-40 cursor-default pointer-events-none']">
-                      <a @click="seekStart(item.tabId)" title="Rewind"
+                      <a @click="seekStart(item.source)" title="Rewind"
                         class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <ArrowUturnLeftIcon class="size-4 mt-0.5"></ArrowUturnLeftIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.playPause ? '' : 'opacity-40 cursor-default pointer-events-none']">
-                      <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.tabId)" title="Pause"
+                      <a v-if="item.state.playbackState?.playing" @click="pauseMedia(item.source)" title="Pause"
                         class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <PauseIcon class="size-4 mt-0.5"></PauseIcon>
                       </a>
-                      <a v-else @click="playMedia(item.tabId)" title="Play"
+                      <a v-else @click="playMedia(item.source)" title="Play"
                         class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <PlayIcon class="size-4 mt-0.5"></PlayIcon>
                       </a>
                     </div>
                     <div class="flex-shrink-0 ms-2"
                       :class="[item.controls.skip ? '' : 'opacity-40 cursor-default pointer-events-none']">
-                      <a @click="nextTrack(item.tabId)" title="Next track"
+                      <a @click="nextTrack(item.source)" title="Next track"
                         class="relative flex items-center justify-center w-6 h-6 -mx-[0.25rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                         <ForwardIcon class="size-4 mt-0.5"></ForwardIcon>
                       </a>
@@ -520,10 +534,10 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                   </div>
                   <div class="flex-1 min-w-0 ms-2.5 me-2.5" v-if="item.state.source?.siteUrl">
                     <a class="block w-full overflow-hidden text-ellipsis whitespace-nowrap no-underline text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors duration-200"
-                      @click.prevent="showTab(item.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
+                      @click.prevent="showTab(item.source.tabId)" :href="getHomepage(item.state.source.siteUrl)">{{ getHostname(item.state.source.siteUrl) }}</a>
                   </div>
                   <div class="flex-shrink-0 ms-2.5 me-0">
-                    <button @click="toggleTabMute(item.tabId)" title="Mute"
+                    <button @click="toggleTabMute(item.source.tabId)" title="Mute"
                       class="relative flex items-center justify-center w-7 h-6 -mx-[0.35rem] -my-[0.2rem] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200">
                       <SpeakerWaveIcon v-if="!item.muted" class="size-4 mt-0.5"></SpeakerWaveIcon>
                       <SpeakerXMarkIcon v-else class="size-4 mt-0.5"></SpeakerXMarkIcon>

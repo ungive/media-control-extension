@@ -341,6 +341,12 @@ function onMediaUpdated(event: MediaStateEvent | null) {
 }
 
 function init() {
+  // Connect to the background script for the time the content script is active.
+  // This is necessary to detect when the content script, and especially
+  // iframes embedded in the page, disappear.
+  browser.runtime.connect({ name: "contentscript" });
+
+  // Observe media playback on the page.
   mediaObserver = new MediaObserver();
   mediaObserver.addEventListener(onMediaUpdated);
   mediaObserver.start();

@@ -4,13 +4,14 @@ import { PlaybackState } from "@/lib/tab-media/playback-state";
 import { ReverseDomain } from "@/lib/util/reverse-domain";
 
 type TabId = number;
-const tabs: Map<TabId, {
+type FrameId = number;
+const tabFrames: Map<FrameId, Map<TabId, {
   reverseDomain: string
   state: BrowserMedia.MediaState | null
   // FIXME Group this under "clientState" or a similar field.
   controls: MediaControlCapabilities
   metadataButtons: Set<string>
-} | null> = new Map();
+} | null>> = new Map();
 
 let connectedPopups = 0;
 
@@ -40,16 +41,18 @@ async function updateTabMedia() {
   // is any extension popup that could display that data.
   let currentMediaCount: number = 0
   const currentMediaPayload: CurrentMediaPayload = { media: [] }
-  for (const [tabId, media] of tabs) {
-    if (media?.state) {
-      currentMediaCount += 1;
-      if (hasExtensionPopup) {
-        currentMediaPayload.media.push({
-          tabId,
-          stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
-          controls: media.controls,
-          metadataButtons: media.metadataButtons,
-        });
+  for (const [tabId, frames] of tabFrames) {
+    for (const [frameId, media] of frames) {
+      if (media?.state) {
+        currentMediaCount += 1;
+        if (hasExtensionPopup) {
+          currentMediaPayload.media.push({
+            source: { tabId, frameId },
+            stateJson: BrowserMedia.MediaState.toJSON(media.state) as object,
+            controls: media.controls,
+            metadataButtons: media.metadataButtons,
+          });
+        }
       }
     }
   }
@@ -77,15 +80,20 @@ async function updateTabMedia() {
 
 async function handleTabMedia(
   tabId: number,
+  frameId: number,
   state: Proto.BrowserMedia.MediaState | null,
   // FIXME Group this under "clientState" or a similar value.
   controls: MediaControlCapabilities | null = null,
   metadataButtons: Set<string> = new Set<string>(),
 ) {
-  if (!tabs.has(tabId)) {
-    tabs.set(tabId, null);
+  if (!tabFrames.has(tabId)) {
+    tabFrames.set(tabId, new Map());
   }
-  let currentState = tabs.get(tabId);
+  const frames = tabFrames.get(tabId)!;
+  if (!frames.has(frameId)) {
+    frames.set(frameId, null);
+  }
+  let currentState = frames.get(frameId);
   if (currentState === undefined) {
     console.assert(false, "There is no previous state");
     return;
@@ -127,7 +135,7 @@ async function handleTabMedia(
       metadataButtons,
     };
   }
-  tabs.set(tabId, currentState);
+  frames.set(frameId, currentState);
 
   // Inform open popup views about current media.
   updateTabMedia();
@@ -143,14 +151,20 @@ async function handleTabMedia(
   }
 }
 
-browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (
+  message: RuntimeMessage,
+  sender: Browser.runtime.MessageSender,
+) => {
   switch (message.type) {
     // Media changed in a tab
     case TabMessage.MediaChanged:
-      if (sender.tab?.id !== undefined) {
+      const tabId = sender.tab?.id;
+      if (tabId) {
+        const frameId = sender.frameId || 0;
         const mediaChangedPayload = message.payload as MediaChangedPayload;
         handleTabMedia(
-          sender.tab.id,
+          tabId,
+          frameId,
           mediaChangedPayload.stateJson
             ? BrowserMedia.MediaState.fromJSON(mediaChangedPayload.stateJson)
             : null,
@@ -195,12 +209,17 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage, sender, se
   }
 });
 
-async function unregisterTab(tabId: number, sendCancel: boolean = true) {
-  if (!tabs.has(tabId)) {
+async function unregisterTab(tabId: number) {
+  if (!tabFrames.has(tabId)) {
     return; // Not registered.
   }
-  handleTabMedia(tabId, null);
-  tabs.delete(tabId);
+  if (tabFrames.has(tabId)) {
+    const frames = tabFrames.get(tabId)!;
+    for (const [frameId, media] of frames) {
+      handleTabMedia(tabId, frameId, null);
+    }
+  }
+  tabFrames.delete(tabId);
 }
 
 browser.webNavigation.onCommitted.addListener((details) => {
@@ -223,9 +242,9 @@ browser.tabs.onRemoved.addListener(async (tabId) => {
 // });
 
 async function init() {
-  // Observe and listen for popups that connect/disconnect i.e. open/close.
   browser.runtime.onConnect.addListener(port => {
     switch (port.name) {
+      // Observe and listen for popups that connect/disconnect i.e. open/close.
       case "popup": {
         connectedPopups += 1;
         port.onDisconnect.addListener(() => {
@@ -235,6 +254,17 @@ async function init() {
           }
           connectedPopups = Math.max(0, newValue);
         });
+        break;
+      }
+      // Remove any media from content scripts that disconnect.
+      case "contentscript": {
+        const tabId = port.sender?.tab?.id;
+        const frameId = port.sender?.frameId;
+        if (tabId && frameId) {
+          port.onDisconnect.addListener(() => {
+            handleTabMedia(tabId, frameId, null);
+          });
+        }
         break;
       }
     }

@@ -45,8 +45,13 @@ export interface MediaChangedPayload {
   metadataButtons: Set<string>
 }
 
-export interface CurrentMediaElementPayload {
+export interface TabMediaSource {
   tabId: number
+  frameId: number
+}
+
+export interface CurrentMediaElementPayload {
+  source: TabMediaSource
   stateJson: object
   controls: MediaControlCapabilities
   metadataButtons: Set<string>
