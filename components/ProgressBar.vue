@@ -67,18 +67,37 @@ watch(() => props.duration, () => init());
 onBeforeUnmount(() => clearCurrentInterval());
 
 const progress = ref<HTMLElement>();
+const positionOverlay = ref<HTMLElement>();
 
-function onProgressClicked(event: PointerEvent) {
+function translateProgressClick(event: MouseEvent): {
+  pixelOffset: number
+  fractionOffset: number
+  playbackPosition: number
+} {
   const box = progress.value!.getBoundingClientRect();
   const pixelOffset = Math.min(Math.max(event.clientX - box.x, 0), box.width);
-  const fractionOffset = pixelOffset / box.width;
-  const targetPosition = fractionOffset * props.duration!;
-  console.log(targetPosition, Math.floor(targetPosition / 60), targetPosition % 60);
+  const fractionOffset = Math.min(Math.max(pixelOffset / box.width, 0.0), 1.0);
+  const playbackPosition = fractionOffset * props.duration!;
+  return {
+    pixelOffset,
+    fractionOffset,
+    playbackPosition
+  };
+}
+
+function onProgressClicked(event: PointerEvent) {
+  const translated = translateProgressClick(event);
   emit('seek', {
     // Floor the value to prevent the player from rounding it up.
-    position: Math.floor(targetPosition),
+    position: Math.floor(translated.playbackPosition),
     originalEvent: event
   });
+}
+
+function syncPositionOverlay(event: MouseEvent) {
+  const translated = translateProgressClick(event);
+  positionOverlay.value!.innerText = formatPosition(translated.playbackPosition * 1000);
+  positionOverlay.value!.style.left = translated.pixelOffset + 'px';
 }
 
 // TODO Offset the circle by this. And use the inverse to calculate the target.
@@ -89,12 +108,13 @@ function onProgressClicked(event: PointerEvent) {
   <div class="flex flex-row items-stretch w-full select-none">
     <div>{{ livePositionDisplay }}</div>
     <template v-if="props.duration">
-      <div @click="onProgressClicked" class="group/progress flex items-center w-full pt-0.5 cursor-pointer">
-        <div ref="progress" class="bg-gray-200 w-full rounded-full h-1 mx-3 dark:bg-gray-700 relative">
+      <div @click="onProgressClicked" @mousemove="syncPositionOverlay" class="group/progress flex items-center w-full pt-0.5 cursor-pointer">
+        <div ref="progress" class="bg-gray-200 dark:bg-gray-700 w-full rounded-full h-1 mx-3 relative">
           <div class="bg-gray-800 h-1 rounded-full dark:bg-gray-300 transition-opacity duration-200 group-hover/progress:opacity-70" :style="{ width: progressPercent + '%' }"></div>
           <div
-            class="bg-black dark:bg-white rounded-full h-3 w-3 absolute top-0 z-10 -translate-y-1/3 -translate-x-2 transition-opacity duration-100 opacity-0 group-hover/progress:opacity-100"
+            class="bg-black dark:bg-white rounded-full h-3 w-3 absolute top-0 z-10 -translate-y-1/3 -translate-x-2 transition-opacity duration-100 delay-75 opacity-0 group-hover/progress:opacity-100"
             :style="{ left: progressPercent + '%' }"></div>
+          <div ref="positionOverlay" class="bg-gray-200 dark:bg-[#3a4048] dark:text-gray-200 px-2.5 pb-[1pt] rounded-full text-[0.825rem] absolute -translate-x-1/2 -top-[2.2rem] shadow-2xl transition-opacity duration-100 delay-75 opacity-0 group-hover/progress:opacity-100 pointer-events-none z-10"></div>
         </div>
       </div>
       <div>{{ formatPosition(props.duration * 1000) }}</div>
