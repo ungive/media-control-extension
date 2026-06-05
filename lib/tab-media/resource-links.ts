@@ -191,7 +191,7 @@ function matchesResourceLinkText(
   caseInsensitive: boolean = false,
 ) {
   const regex = new RegExp(
-    `^${normalized(linkText)}$`,
+    `^${RegExp.escape(normalized(linkText))}$`,
     'u' + (caseInsensitive ? 'i' : ''));
   return regex.test(normalized(text));
 }
@@ -202,7 +202,7 @@ function includesResourceLinkText(
   caseInsensitive: boolean = false
 ) {
   const regex = new RegExp(
-    `(?<!\\p{L}|\\p{N})${normalized(linkText)}(?!\\p{L}|\\p{N})`,
+    `(?<!\\p{L}|\\p{N})${RegExp.escape(normalized(linkText))}(?!\\p{L}|\\p{N})`,
     'u' + (caseInsensitive ? 'i' : ''));
   return regex.test(normalized(text));
 }
