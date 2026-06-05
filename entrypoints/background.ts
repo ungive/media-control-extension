@@ -1,7 +1,7 @@
 import { CurrentMediaPayload, ExtensionMessage, MediaChangedPayload, MediaControlCapabilities, PopoutMessage, PopoutStatePaylaod as PopoutStatePayload, PopupMessage, RuntimeMessage, TabMessage, WindowSizePayload } from "@/lib/messages";
 import { BrowserMedia, Proto } from "@/lib/proto";
 import { PlaybackState } from "@/lib/tab-media/playback-state";
-import { Browser } from "wxt/browser";
+import { ReverseDomain } from "@/lib/util/reverse-domain";
 
 type TabId = number;
 const tabs: Map<TabId, {
@@ -106,8 +106,22 @@ async function handleTabMedia(
       console.assert(false, "There is no source for the media state");
       return;
     }
+    // FIXME We don't actually need all the favicon detection code in the
+    // content script, the background script can get it reliably with the
+    // "Browser.tabs.Tab.favIconUrl" property.
+    // FIXME Don't patch the state in this way.
+    try {
+      const tab = await browser.tabs.get(tabId);
+      if (tab.url) {
+        state.source.siteUrl = tab.url
+        state.source.reverseDomain = ReverseDomain.forUrl(tab.url);
+      }
+      if (tab.favIconUrl) {
+        state.source.faviconUrl = tab.favIconUrl;
+      }
+    } catch {}
     currentState = {
-      reverseDomain: state.source?.reverseDomain,
+      reverseDomain: state.source.reverseDomain,
       state: state,
       controls,
       metadataButtons,
