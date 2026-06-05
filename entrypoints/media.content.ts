@@ -183,18 +183,21 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
     console.assert(false, 'Media observer not initialized');
     return;
   }
+  let isMediaUpdate = false;
+  switch (message.type) {
+    case PopupMessage.PauseMedia:
+    case PopupMessage.PlayMedia:
+    case PopupMessage.SeekStart:
+    case PopupMessage.SeekPosition:
+    case PopupMessage.NextTrack: {
+      isMediaUpdate = true;
+      break;
+    }
+  }
   // Clear any seek retry interval, if the message controls media playback. We
   // don't want an old seek to interfere with new media control actions.
-  if (seekPositionInterval) {
-    switch (message.type) {
-      case PopupMessage.PauseMedia:
-      case PopupMessage.PlayMedia:
-      case PopupMessage.SeekStart:
-      case PopupMessage.SeekPosition:
-      case PopupMessage.NextTrack: {
-        seekPositionInterval.clear();
-      }
-    }
+  if (seekPositionInterval && isMediaUpdate) {
+    seekPositionInterval.clear();
   }
   // We always try to prioritize MediaSession action handlers as these are the
   // functions that are called when the user uses their device's media keys and
@@ -310,6 +313,9 @@ browser.runtime.onMessage.addListener(async (message: RuntimeMessage) => {
       }
       break;
     }
+  }
+  if (isMediaUpdate) {
+    mediaObserver.updateHint();
   }
 });
 

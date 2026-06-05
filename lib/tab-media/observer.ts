@@ -584,6 +584,10 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
     return this.currentMediaElement
   }
 
+  updateHint() {
+    this.#handleUpdate();
+  }
+
   #onMediaElementUpdated(element: HTMLMediaElement) {
     const filter = MediaObserver.createMediaElementFilter({
       // FIXME Does this exclude e.g. Twitch streams?
