@@ -428,19 +428,19 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
               <div class="flex-shrink-0 cursor-pointer" @click="showTab(item.tabId)">
                 <div class="relative w-28 h-28 mt-0.5 group/cover">
                   <img v-if="item.src"
-                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-neutral-200 dark:outline-neutral-800 transition-all duration-300', item.muted ? 'grayscale group-hover/cover:grayscale-0 opacity-30 group-hover/cover:opacity-100' : '']"
+                    :class="['absolute inset-0 w-full h-full rounded-sm object-cover object-center outline outline-1 outline-neutral-200 dark:outline-neutral-800 transition-all duration-75', item.muted ? 'grayscale group-hover/cover:grayscale-0 opacity-30 group-hover/cover:opacity-100' : '']"
                     :src="item.src" alt="Cover">
                   <PlayCircleIcon v-else-if="item.state.playbackState?.playing && !item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PlayCircleIcon>
                   <PauseCircleIcon v-else-if="!item.muted" class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></PauseCircleIcon>
                   <SpeakerXMarkIcon v-else class="w-28 h-28 p-3 text-neutral-800 dark:text-neutral-200"></SpeakerXMarkIcon>
                   <Transition
                     enter-active-class="transition duration-100 ease-out"
-                    enter-from-class="opacity-0 scale-90"
-                    enter-to-class="opacity-70 scale-100"
+                    enter-from-class="opacity-0"
+                    enter-to-class="opacity-70"
                     leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-70 scale-100"
-                    leave-to-class="opacity-0 scale-90">
-                    <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 brightness-[70%] size-12 m-auto opacity-100 scale-100 transition-all group-hover/cover:opacity-0 group-hover/cover:scale-90 duration-100" />
+                    leave-from-class="opacity-70"
+                    leave-to-class="opacity-0">
+                    <SpeakerXMarkIcon v-if="item.src && item.muted" class="absolute inset-0 brightness-[70%] size-12 m-auto opacity-100 transition-all group-hover/cover:opacity-0 duration-100" />
                   </Transition>
                   <div v-if="item.src" class="absolute bottom-0 right-0">
                     <button @click.stop="openImageViewer(item.state.images)" target="_blank"
