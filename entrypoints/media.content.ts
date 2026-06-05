@@ -1,4 +1,4 @@
-import { ExtensionMessage, MediaChangedPayload, OpenLinkPayload, PopupMessage, RuntimeMessage, TabMessage } from "@/lib/messages";
+import { MediaChangedPayload, OpenLinkPayload, PopupMessage, RuntimeMessage, SeekPositionPayload, TabMessage } from "@/lib/messages";
 import { BrowserMedia } from "@/lib/proto";
 import { MediaStateEvent, MediaObserver } from "@/lib/tab-media/observer";
 import { findRootNodes } from "@/lib/tab-media/resource-links";
@@ -7,7 +7,6 @@ let mediaObserver: MediaObserver | null = null;
 let lastInteractedMediaElement: HTMLMediaElement | null = null;
 
 function openHrefLink(href: string) {
-  console.log(href);
   href = href.trim();
   if (href.length === 0) {
     console.assert(false, "The link's href is empty");
@@ -88,6 +87,21 @@ browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
         }
         if (!mediaElement.paused) {
           mediaElement.currentTime = 0;
+        }
+      }
+      break;
+    }
+    case PopupMessage.SeekPosition: {
+      const mediaElement = mediaObserver.mediaElement;
+      const seekPositionPayload = message.payload as SeekPositionPayload;
+      if (mediaElement !== null) {
+        if (mediaElement.paused) {
+          mediaElement.play();
+        }
+        if (!mediaElement.paused) {
+          // If this ever does not work, we could use the current progress
+          // element and click on the respective position instead.
+          mediaElement.currentTime = seekPositionPayload.position;
         }
       }
       break;

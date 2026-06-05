@@ -15,6 +15,7 @@ export enum PopupMessage {
   PauseMedia,
   PlayMedia,
   SeekStart,
+  SeekPosition,
   NextTrack,
   OpenPopout,
   GetPopoutState,
@@ -63,6 +64,10 @@ export interface PopoutStatePaylaod {
 }
 
 export interface OpenLinkPayload {
-  text: string,
-  href: string | undefined,
+  text: string
+  href: string | undefined
+}
+
+export interface SeekPositionPayload {
+  position: number
 }

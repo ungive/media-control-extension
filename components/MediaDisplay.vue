@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { isPopout } from '@/entrypoints/popup/popout';
-import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, OpenLinkPayload, PopoutStatePaylaod, PopupMessage, RuntimeMessage } from '@/lib/messages';
+import { CurrentMediaPayload, ExtensionMessage, MediaControlCapabilities, OpenLinkPayload, PopoutStatePaylaod, PopupMessage, RuntimeMessage, SeekPositionPayload } from '@/lib/messages';
 import { BrowserMedia } from '@/lib/proto';
 import { ArrowUturnLeftIcon, ForwardIcon, GlobeAltIcon, PauseCircleIcon, PauseIcon, PlayCircleIcon, PlayIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from '@heroicons/vue/16/solid';
 import { InformationCircleIcon } from '@heroicons/vue/20/solid';
@@ -324,6 +324,15 @@ function seekStart(tabId: number) {
   } as RuntimeMessage);
 }
 
+function seekPosition(tabId: number, position: number) {
+  browser.tabs.sendMessage(tabId, {
+    type: PopupMessage.SeekPosition,
+    payload: {
+      position
+    } as SeekPositionPayload
+  } as RuntimeMessage);
+}
+
 function openPopout() {
   browser.runtime.sendMessage({
     type: PopupMessage.OpenPopout
@@ -475,9 +484,9 @@ function openImageViewer(images: BrowserMedia.MediaState_Image[]) {
                       @link-click="openLink(item.tabId, $event.text, $event.href)"/>
                   </div>
                 </div>
-                <div class="text-gray-700 truncate dark:text-gray-400"
+                <div class="text-gray-700 dark:text-gray-400"
                   v-if="item.state.playbackState && item.state.playbackState.positionTimestamp && item.state.metadata.duration">
-                  <ProgressBar :playing="item.state.playbackState.playing" :position="item.state.playbackState.position"
+                  <ProgressBar @seek="seekPosition(item.tabId, $event.position)" :playing="item.state.playbackState.playing" :position="item.state.playbackState.position"
                     :position-timestamp="item.state.playbackState.positionTimestamp"
                     :duration="item.state.metadata.duration" class="mt-1"></ProgressBar>
                 </div>

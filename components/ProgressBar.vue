@@ -18,6 +18,15 @@ const props = defineProps({
   }
 });
 
+export interface SeekEvent {
+  position: number
+  originalEvent: MouseEvent
+}
+
+const emit = defineEmits<{
+  (e: 'seek', position: SeekEvent): void
+}>();
+
 const livePosition = ref(0);
 const progressPercent = ref(0);
 const livePositionDisplay = computed(() => formatPosition(livePosition.value));
@@ -56,14 +65,36 @@ watch(() => props.position, () => init());
 watch(() => props.positionTimestamp, () => init());
 watch(() => props.duration, () => init());
 onBeforeUnmount(() => clearCurrentInterval());
+
+const progress = ref<HTMLElement>();
+
+function onProgressClicked(event: PointerEvent) {
+  const box = progress.value!.getBoundingClientRect();
+  const pixelOffset = Math.min(Math.max(event.clientX - box.x, 0), box.width);
+  const fractionOffset = pixelOffset / box.width;
+  const targetPosition = fractionOffset * props.duration!;
+  console.log(targetPosition, Math.floor(targetPosition / 60), targetPosition % 60);
+  emit('seek', {
+    position: targetPosition,
+    originalEvent: event
+  });
+}
+
+// TODO Offset the circle by this. And use the inverse to calculate the target.
+// Style: "left: (progressPercent + 2 - (3 * progressPercent / 100)) + '%'"
 </script>
 
 <template>
-  <div class="flex flex-row w-full select-none">
+  <div class="flex flex-row items-stretch w-full select-none">
     <div>{{ livePositionDisplay }}</div>
     <template v-if="props.duration">
-      <div class="w-full bg-gray-200 rounded-full h-1 mt-2.5 mb-1 mx-2 dark:bg-gray-700">
-        <div class="bg-gray-800 h-1 rounded-full dark:bg-gray-300" :style="{ width: progressPercent + '%' }"></div>
+      <div @click="onProgressClicked" class="group/progress flex items-center w-full pt-0.5 cursor-pointer">
+        <div ref="progress" class="bg-gray-200 w-full rounded-full h-1 mx-2 dark:bg-gray-700 relative">
+          <div class="bg-gray-800 h-1 rounded-full dark:bg-gray-300 transition-opacity duration-200 group-hover/progress:opacity-70" :style="{ width: progressPercent + '%' }"></div>
+          <div
+            class="bg-black dark:bg-white rounded-full h-3 w-3 absolute top-0 z-10 -translate-y-1/3 -translate-x-2 transition-opacity duration-100 opacity-0 group-hover/progress:opacity-100"
+            :style="{ left: progressPercent + '%' }"></div>
+        </div>
       </div>
       <div>{{ formatPosition(props.duration * 1000) }}</div>
     </template>
