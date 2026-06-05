@@ -165,7 +165,8 @@ export class ExcludeElementFilter implements IElementFilter<Element> {
       return true;
     }
     for (const selector of this.querySelectors) {
-      if (element.parentNode.querySelector(selector) === element) {
+      const selected = [...element.parentNode.querySelectorAll(selector)];
+      if (selected.some((item: Element) => item === element)) {
         return false;
       }
     }
