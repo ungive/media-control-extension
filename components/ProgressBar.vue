@@ -89,7 +89,7 @@ function onProgressClicked(event: PointerEvent) {
     <div>{{ livePositionDisplay }}</div>
     <template v-if="props.duration">
       <div @click="onProgressClicked" class="group/progress flex items-center w-full pt-0.5 cursor-pointer">
-        <div ref="progress" class="bg-gray-200 w-full rounded-full h-1 mx-2 dark:bg-gray-700 relative">
+        <div ref="progress" class="bg-gray-200 w-full rounded-full h-1 mx-3 dark:bg-gray-700 relative">
           <div class="bg-gray-800 h-1 rounded-full dark:bg-gray-300 transition-opacity duration-200 group-hover/progress:opacity-70" :style="{ width: progressPercent + '%' }"></div>
           <div
             class="bg-black dark:bg-white rounded-full h-3 w-3 absolute top-0 z-10 -translate-y-1/3 -translate-x-2 transition-opacity duration-100 opacity-0 group-hover/progress:opacity-100"
