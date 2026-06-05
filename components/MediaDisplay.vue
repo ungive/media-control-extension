@@ -163,7 +163,7 @@ onMounted(async () => {
   });
 
   // Connect to the background script for the time the popup is opened.
-  browser.runtime.connect();
+  browser.runtime.connect({ name: "popup" });
 
   // Request the popout state.
   browser.runtime.sendMessage({

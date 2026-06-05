@@ -225,14 +225,19 @@ browser.tabs.onRemoved.addListener(async (tabId) => {
 async function init() {
   // Observe and listen for popups that connect/disconnect i.e. open/close.
   browser.runtime.onConnect.addListener(port => {
-    connectedPopups += 1;
-    port.onDisconnect.addListener(() => {
-      const newValue = connectedPopups - 1;
-      if (newValue < 0) {
-        console.assert(false, "Number of connected popups cannot be negative");
+    switch (port.name) {
+      case "popup": {
+        connectedPopups += 1;
+        port.onDisconnect.addListener(() => {
+          const newValue = connectedPopups - 1;
+          if (newValue < 0) {
+            console.assert(false, "Number of connected popups cannot be negative");
+          }
+          connectedPopups = Math.max(0, newValue);
+        });
+        break;
       }
-      connectedPopups = Math.max(0, newValue);
-    })
+    }
   });
 }
 
