@@ -12,7 +12,7 @@
 - Increased the area of playback control buttons to make them easier to click
 - The track title is now semibold to emphasize it more
 - Fixed the website icon (favicon) not showing for some websites (e.g. TIDAL). Also, when no icon is present, the extension now falls back to showing a globe icon instead of no icon
-- Fixed some links not being extracted properly that contained whitespace
+- Fixed some links that contained whitespace not being extracted properly
 - The browser's right-click menu now only opens for links instead of being always opened
 - Now ignoring the "Canvas" video on Spotify, as it interferes with active music playback
 - Fixed some album links being only partially underlined at times
