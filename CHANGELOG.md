@@ -15,6 +15,7 @@
 - Improved responsiveness and reduced flickering of the extension pop-up
 - Increased the area of playback control buttons to make them easier to click
 - The track title is now semibold to emphasize it more
+- Fixed Spotify showing an incorrect playback position and track duration
 - Fixed some artists links not being extracted from the web page
 - Fixed some album links being only partially underlined at times
 - Fixed the website icon (favicon) not showing for some websites (e.g. TIDAL). Also, when no icon is present, the extension now falls back to showing a globe icon instead of no icon
