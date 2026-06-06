@@ -41,11 +41,10 @@ export default defineConfig({
     }
   },
   zip: {
-    excludeSources: [
-      "README.md"
-    ],
     includeSources: [
-      "SOURCE_CODE_REVIEW.md"
+      "SOURCE_CODE_REVIEW.md",
+      "CHANGELOG.md",
+      "README.md",
     ]
   }
 });
