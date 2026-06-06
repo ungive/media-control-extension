@@ -2,20 +2,27 @@
 
 ## 0.1.2
 
+- The extension now detects media in iframes and allows controlling each frame individually
+- Improved responsiveness and reduced flickering of the extension pop-up
+- Added seeking. You can now click on the progress bar to seek to a specific playback position
+- Fixed some artists links not being extracted from the web page
+- Spotify and Deezer now have media controls, just like other streaming services
 - Added a button to enlarge the cover by opening the largest available version in a new tab
 - Added a button to mute audio of individual tabs. Note that this mutes the entire tab and does not use any mute controls that may be present on the website, like e.g. on YouTube. The website can only be unmuted again using the browser's controls or via the extension menu
 - Artist and album links now open the respective artist or album page directly within the tab in which the media is playing instead of in a new tab. The tab is also focused when such a link is clicked. The link to the artist or album page can still be copied by right-clicking it
 - Clicking anywhere in the area around the metadata now focuses the tab the media is playing in
 - The track title is now wrapped in a link element to the track or album page. Likewise, the site's domain is now also wrapped in a link element to the website. Clicking either link focuses the tab. Each link can be copied via the browser's right-click menu
 - Removed the share button for now, as the link can be copied from the title instead. An improved and more intuitive share button will be added in a future version of the extension
-- Now extracting page links for the track page on Apple Music, for the track, artist and album page on Classical Apple Music, for the track and artist page on SoundCloud and for the channel on YouTube via channel handles that start with "@"
+- Now extracting page links for the track page on Apple Music, for the track, artist and album page on Classical Apple Music, for the track and artist page on SoundCloud, for the channel on YouTube via channel handles that start with "@" and for the channel in embedded YouTube videos
 - Increased the area of playback control buttons to make them easier to click
 - The track title is now semibold to emphasize it more
 - Fixed the website icon (favicon) not showing for some websites (e.g. TIDAL). Also, when no icon is present, the extension now falls back to showing a globe icon instead of no icon
 - Fixed some links that contained whitespace not being extracted properly
 - The browser's right-click menu now only opens for links instead of being always opened
 - Now ignoring the "Canvas" video on Spotify, as it interferes with active music playback
+- Fixed Discord notification sounds showing up in the extension pop-up sometimes
 - Fixed some album links being only partially underlined at times
+- Improved integration with websites by preferring to execute MediaSession action handlers that are registered by the page instead of interacting with HTML elements on the web page whenever possible
 
 ## 0.1.1
 
