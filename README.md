@@ -6,7 +6,7 @@ Displays all available metadata, extracts links to track, artist and album pages
 
 ![](./.github/assets/screenshot-menu.png)
 
-[![](./.github/assets/download-firefox-badge.png)](https://addons.mozilla.org/firefox/addon/media-control-extension/)&emsp;[![](./.github/assets/download-chrome-web-store-badge.png)](https://chromewebstore.google.com/detail/media-control/hfoogbmpgpdbipkjdfgbloanideefjgk)
+[![](./.github/assets/download-chrome-web-store-badge.png)](https://chromewebstore.google.com/detail/media-control/hfoogbmpgpdbipkjdfgbloanideefjgk)&emsp;[![](./.github/assets/download-firefox-badge.png)](https://addons.mozilla.org/firefox/addon/media-control-extension/)&emsp;[![](./.github/assets/download-github-badge.png)](https://github.com/ungive/media-control-extension/releases/latest)
 
 ## Features
 
