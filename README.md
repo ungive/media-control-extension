@@ -69,6 +69,10 @@ To erase the container:
 $ bash ./dev-container.sh --erase
 ```
 
+### Development notes
+
+- TIDAL (tidal.com) seems to overwrite all console logging functions, which causes e.g. debug logs to not appear in the console. You'll have to store the original function somewhere globally and use that for debugging
+
 ## Copyright
 
 Copyright (c) 2025-2026 Jonas van den Berg  
