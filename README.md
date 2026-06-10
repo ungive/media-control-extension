@@ -72,6 +72,7 @@ $ bash ./dev-container.sh --erase
 ### Development notes
 
 - TIDAL (tidal.com) seems to overwrite all console logging functions, which causes e.g. debug logs to not appear in the console. You'll have to store the original function somewhere globally and use that for debugging
+- When adding new features and debugging with console logs, it can sometimes be difficult to keep track of the document state, when the page contains iframes. Disable `allFrames: true` in e.g. `media.content.ts` to restrict execution to the root document during development, then revert it again later
 
 ## Copyright
 
