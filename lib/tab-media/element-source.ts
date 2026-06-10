@@ -1,4 +1,3 @@
-import { isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressElement } from "./progress-element";
 import { findRootNodes } from "./resource-links";
@@ -145,7 +144,7 @@ export class MediaElementFilter implements IElementFilter<HTMLMediaElement> {
       }
     }
     if (!this.options.allowPaused) {
-      if (isMediaElementPaused(element)) {
+      if (element.paused) {
         return false;
       }
     }

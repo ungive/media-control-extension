@@ -1,18 +1,6 @@
 import { ReverseDomain } from "./reverse-domain";
 
 /**
- * Checks whether a media element is considered paused.
- *
- * @param element The media element.
- * @returns Whether the media element is considered paused.
- */
-export function isMediaElementPaused(element: HTMLMediaElement): boolean {
-  // Muted media is considered paused for now,
-  // as the background script detects playing media through "audible" tabs.
-  return element.paused || element.muted;
-}
-
-/**
  * Determines the current page's favicon URL.
  *
  * @returns The current page's favicon URL.

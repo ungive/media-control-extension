@@ -1,5 +1,5 @@
 import { BrowserMedia } from "../proto";
-import { getFaviconUrl, getPageUrl, getReverseDomain, isMediaElementPaused } from "../util/document";
+import { getFaviconUrl, getPageUrl, getReverseDomain } from "../util/document";
 import { Constants } from "./constants";
 import { ElementSourceObserver, ExcludeElementFilter, IElementFilter, IElementSource, MediaElementFilter, MediaElementFilterOptions, MediaElementSource, MultiElementFilter, TabProgressElementSource } from "./element-source";
 import { ProgressElement, ProgressElementPrecision } from "./progress-element";
@@ -528,7 +528,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
     this.mediaElementObserver = new ElementGroupObserver(
       new MediaElementSource(MediaObserver.createMediaElementFilter({
         // FIXME Does this exclude e.g. Twitch streams?
-        requireDuration: true,
+        requireDuration: false,
         // We only start observing elements that are playing.
         allowPaused: false,
       })),
@@ -714,7 +714,7 @@ export class MediaObserver implements IObserver<MediaStateEventCallback> {
     let isPlaying = navigator.mediaSession.playbackState !== "paused"
       && (navigator.mediaSession.playbackState === "playing"
         || !this.currentMediaElement
-        || !isMediaElementPaused(this.currentMediaElement));
+        || !this.currentMediaElement.paused);
 
     // FIXME Do not assume it's playing by default. Use the progress element
     // to determine whether the playback position is advancing or not.
