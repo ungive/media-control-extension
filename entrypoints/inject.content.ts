@@ -61,9 +61,9 @@ function installMediaSessionSetActionHandlerHooks() {
 }
 
 function installHooks() {
-  // installAudioConstructorHook();
+  installAudioConstructorHook();
   installMediaElementPrototypeMethodHooks();
-  // installMediaSessionSetActionHandlerHooks();
+  installMediaSessionSetActionHandlerHooks();
 }
 
 function isWindowMessage(message: unknown): message is WindowMessage {
