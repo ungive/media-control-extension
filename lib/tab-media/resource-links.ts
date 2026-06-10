@@ -33,19 +33,19 @@ interface ClosestNodeAncestor<N1 extends Node, N2 extends Node> {
 }
 
 // TODO Move this into a separate file, since it's used elsewhere.
-export function findRootNodes(start: RootElement = document.body): RootElement[] {
+export function findRootNodes(
+  start: RootElement = document.body,
+): RootElement[] {
   const roots: RootElement[] = [start];
-  const next: Node[] = [...roots];
-  while (next.length > 0) {
-    const current = next.shift()!;
-    if (!(current instanceof HTMLElement)) {
-      continue;
+  const queue: Node[] = [...roots];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current instanceof Element || current instanceof ShadowRoot) {
+      queue.push(...current.children);
     }
-    if (current.shadowRoot) {
+    if (current instanceof Element && current.shadowRoot) {
       roots.push(current.shadowRoot);
-    }
-    for (const element of current.children) {
-      next.push(element);
+      queue.push(current.shadowRoot);
     }
   }
   return roots;
