@@ -2,7 +2,7 @@
   "name": "media-control",
   "description": "View and control all media that is playing in your browser",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "scripts": {
     "icons": "icon-gen -i icon.png -o public/icon -r --favicon --favicon-name=icon- --favicon-png-sizes 16,24,32,48,64,96,128,256",
