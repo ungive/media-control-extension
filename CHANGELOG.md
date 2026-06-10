@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- The progress bar can now be dragged, instead of just being clickable
+- Fixed a bug where videos would disappear or turn black on some sites
+- Fixed a bug where some media elements would not be detected that are located in shadow roots within the document
+- Fixed a bug where muted media elements were considered paused. In version 0.1.0 the extension detected media through audible tabs only
+- Fixed a bug where not all shadow roots in the document would be found, leaving some media elements undetected by the extension
+
 ## 0.1.2
 
 - Added seeking. You can now click on the progress bar to jump to a specific playback position
