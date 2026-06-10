@@ -26,6 +26,9 @@ for arg in "$@"; do
         STOP=true
     fi
 done
+if command -v service >/dev/null 2>&1; then
+    sudo service docker status &> /dev/null || echo "Starting docker service" && sudo service docker start
+fi
 if ! $RECREATE; then
     if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
         if $STOP; then
