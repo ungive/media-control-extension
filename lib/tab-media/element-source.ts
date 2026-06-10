@@ -1,6 +1,7 @@
 import { isMediaElementPaused } from "../util/document";
 import { Constants } from "./constants";
 import { AriaProgressElementFactory, InputRangeProgressElementFactory, ProgressElement } from "./progress-element";
+import { findRootNodes } from "./resource-links";
 
 /**
  * Represents an arbitrary source for getting elements in the DOM.
@@ -21,7 +22,7 @@ export interface IElementFilter<E> {
 /**
  * An element filter for testing multiple filters on an element in order.
  */
-export class MultiElementFilter<E> implements IElementFilter<E>{
+export class MultiElementFilter<E> implements IElementFilter<E> {
 
   constructor(private filters: IElementFilter<E>[]) { }
 
@@ -181,19 +182,21 @@ export class MediaElementSource implements IElementSource<HTMLMediaElement> {
 
   constructor(
     private filter: IElementFilter<HTMLMediaElement> = new MediaElementFilter(),
-    private source: ParentNode = document
+    private source: Element = document.body
   ) { }
 
   get(): HTMLMediaElement[] {
     const elements: HTMLMediaElement[] = [];
-    for (const audio of this.source.querySelectorAll('audio')) {
-      if (audio instanceof HTMLAudioElement) {
-        elements.push(audio);
+    for (const root of findRootNodes(this.source)) {
+      for (const audio of root.querySelectorAll('audio')) {
+        if (audio instanceof HTMLAudioElement) {
+          elements.push(audio);
+        }
       }
-    }
-    for (const video of this.source.querySelectorAll('video')) {
-      if (video instanceof HTMLVideoElement) {
-        elements.push(video);
+      for (const video of root.querySelectorAll('video')) {
+        if (video instanceof HTMLVideoElement) {
+          elements.push(video);
+        }
       }
     }
     const filtered: HTMLMediaElement[] = [];
