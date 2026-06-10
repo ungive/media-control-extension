@@ -1,4 +1,5 @@
 import { ActionSeekToPayload, MediaSessionMessage, WindowMessage, WindowResponseMessage } from "@/lib/messages";
+import { findRootNodes } from "@/lib/tab-media/resource-links";
 
 // Overrides the Audio class constructor so that any newly created Audio element
 // on the page is immediately appended to the document body. This is necessary
@@ -21,7 +22,7 @@ function installPrototypeMethodHook(prototype: any, method: string) {
     // console.log('[prototype method hook]', prototype, method, document.contains(this));
     const result = original.apply(this, arguments);
     console.assert(this instanceof Node);
-    if (!document.contains(this)) {
+    if (!findRootNodes().some(root => root.contains(this))) {
       document.body.append(this);
     }
     return result
@@ -60,9 +61,9 @@ function installMediaSessionSetActionHandlerHooks() {
 }
 
 function installHooks() {
-  installAudioConstructorHook();
+  // installAudioConstructorHook();
   installMediaElementPrototypeMethodHooks();
-  installMediaSessionSetActionHandlerHooks();
+  // installMediaSessionSetActionHandlerHooks();
 }
 
 function isWindowMessage(message: unknown): message is WindowMessage {
