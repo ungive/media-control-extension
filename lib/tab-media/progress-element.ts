@@ -1,3 +1,5 @@
+import { findRootNodes } from "./resource-links";
+
 export interface IProgressElement {
   min: number | null;
   max: number | null;
@@ -100,12 +102,14 @@ export class ProgressElementFactory {
 
   queryAll(): ProgressElement[] {
     const progressElements: ProgressElement[] = [];
-    const elements = document.querySelectorAll(this.baseSelector
-      + `[${this.minAttribute}][${this.maxAttribute}][${this.valueAttribute}]`);
-    for (const element of elements) {
-      progressElements.push(new ProgressElement(
-        element, this.minAttribute, this.maxAttribute, this.valueAttribute
-      ));
+    for (const root of findRootNodes()) {
+      const elements = root.querySelectorAll(this.baseSelector
+        + `[${this.minAttribute}][${this.maxAttribute}][${this.valueAttribute}]`);
+      for (const element of elements) {
+        progressElements.push(new ProgressElement(
+          element, this.minAttribute, this.maxAttribute, this.valueAttribute
+        ));
+      }
     }
     return progressElements;
   }
