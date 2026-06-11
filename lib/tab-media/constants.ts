@@ -110,7 +110,7 @@ export namespace Constants {
     ],
   };
 
-  export const VIDEO_ELEMENT_APPEND_WHITELIST: Set<string> = new Set([
+  export const APPEND_VIDEO_ELEMENT_WHITELIST: Set<string> = new Set([
     // Spotify plays audio through video elements.
     'com.spotify.open',
   ]);

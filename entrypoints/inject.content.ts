@@ -121,7 +121,7 @@ function installPrototypeMethodHook(prototype: any, method: string) {
 function installMediaElementPrototypeMethodHooks() {
   ['play', 'pause'].forEach(method => {
     installPrototypeMethodHook(HTMLAudioElement.prototype, method);
-    if (Constants.VIDEO_ELEMENT_APPEND_WHITELIST.has(getReverseDomain())) {
+    if (Constants.APPEND_VIDEO_ELEMENT_WHITELIST.has(getReverseDomain())) {
       installPrototypeMethodHook(HTMLVideoElement.prototype, method);
     }
   });
