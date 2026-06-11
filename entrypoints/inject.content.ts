@@ -1,6 +1,82 @@
 import { ActionSeekToPayload, MediaSessionMessage, WindowMessage, WindowResponseMessage } from "@/lib/messages";
 import { findRootNodes } from "@/lib/tab-media/resource-links";
 
+function makeElementInaccessible(element: HTMLElement) {
+  const attributeNames = element.getAttributeNames();
+  for (const attribute of attributeNames) {
+    element.removeAttribute(attribute);
+  }
+  element.setAttribute("hidden", "");
+  element.setAttribute("aria-hidden", "true");
+  element.inert = true;
+  Object.assign(element.style, {
+    position: "fixed",
+    left: "-1000000000px",
+    top: "0",
+    width: "0",
+    height: "0",
+    display: "none",
+    pointerEvents: "none",
+    zIndex: "-2147483648",
+  });
+}
+
+function createInaccessibleContainer(
+  attributes: { [key: string]: string },
+): HTMLElement {
+  const container = document.createElement("div");
+  const resetContainer = () => {
+    makeElementInaccessible(container);
+    for (const [attribute, value] of Object.entries(attributes)) {
+      container.setAttribute(attribute, value);
+    }
+  };
+  resetContainer();
+  let mutationObserver: MutationObserver;
+  const observeContainer = () => {
+    mutationObserver.observe(container, {
+      attributes: true,
+    });
+  };
+  mutationObserver = new MutationObserver(() => {
+    // Prevent infinite recursion by disconnecting and reconnecting after.
+    mutationObserver.disconnect();
+    resetContainer();
+    observeContainer();
+  });
+  observeContainer();
+  return container;
+}
+
+const HIDDEN_CONTAINER_CLASS_NAME = 'media-control-extension-container'
+let hiddenContainerFingerprint: string | null = null;
+
+function getHiddenRoot(): ShadowRoot {
+  if (hiddenContainerFingerprint !== null) {
+    const elements: NodeListOf<Element> =
+      document.body.querySelectorAll(
+        `.${HIDDEN_CONTAINER_CLASS_NAME}` +
+        `[data-fingerprint="${hiddenContainerFingerprint}"]`);
+    let discoveredRoot: HTMLElement | null = null;
+    for (const element of elements) {
+      if (element instanceof HTMLElement) {
+        discoveredRoot = element;
+        break;
+      }
+    }
+    if (discoveredRoot !== null && discoveredRoot.shadowRoot !== null) {
+      return discoveredRoot.shadowRoot;
+    }
+  }
+  hiddenContainerFingerprint = crypto.randomUUID();
+  const root = createInaccessibleContainer({
+    'class': HIDDEN_CONTAINER_CLASS_NAME,
+    'data-fingerprint': hiddenContainerFingerprint,
+  });
+  document.body.appendChild(root);
+  return root.attachShadow({ mode: 'open' });
+}
+
 // Overrides the Audio class constructor so that any newly created Audio element
 // on the page is immediately appended to the document body. This is necessary
 // on pages that autoplay audio without calling Audio.play() first. An example
@@ -10,7 +86,7 @@ function installAudioConstructorHook() {
   window.Audio = function (...args: ConstructorParameters<typeof Audio>) {
     const audio = new OriginalAudio(...args);
     // console.log('[audio constructor]', audio);
-    document.body.append(audio);
+    getHiddenRoot().appendChild(audio);
     return audio;
   } as unknown as typeof Audio;
   window.Audio.prototype = OriginalAudio.prototype;
@@ -23,7 +99,7 @@ function installPrototypeMethodHook(prototype: any, method: string) {
     const result = original.apply(this, arguments);
     console.assert(this instanceof Node);
     if (!findRootNodes().some(root => root.contains(this))) {
-      document.body.append(this);
+      getHiddenRoot().appendChild(this);
     }
     return result
   };
