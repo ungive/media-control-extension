@@ -35,8 +35,12 @@ function installPrototypeMethodHook(prototype: any, method: string) {
 // it media wouldn't be detected immediately when it starts playing.
 function installMediaElementPrototypeMethodHooks() {
   ['play', 'pause'].forEach(method => {
-    // This includes each of HTMLVideoElement and HTMLAudioElement.
-    installPrototypeMethodHook(HTMLMediaElement.prototype, method);
+    // Do not install the hook on video elements. We don't want to append video
+    // elements to the DOM, if they are not present, as this can break websites,
+    // since video elements are visually visible. For now we can assume that
+    // when a video element plays, the website will also display it somewhere
+    // and it will therefore be in the DOM now or very soon.
+    installPrototypeMethodHook(HTMLAudioElement.prototype, method);
   });
 }
 
