@@ -1,5 +1,7 @@
 import { ActionSeekToPayload, MediaSessionMessage, WindowMessage, WindowResponseMessage } from "@/lib/messages";
+import { Constants } from "@/lib/tab-media/constants";
 import { findRootNodes } from "@/lib/tab-media/resource-links";
+import { getReverseDomain } from "@/lib/util/document";
 
 function makeElementInaccessible(element: HTMLElement) {
   const attributeNames = element.getAttributeNames();
@@ -105,18 +107,23 @@ function installPrototypeMethodHook(prototype: any, method: string) {
   };
 }
 
-// Appends any audio elements that are being played or paused to the document
-// body so that they can be found and used by the isolated content script. An
-// example website that needs this injection is https://soundcloud.com, without
-// it media wouldn't be detected immediately when it starts playing. We do not
-// install the hook on video elements. We don't want to append video elements
-// to the DOM, if they are not present, as this can break websites, since video
-// elements are visible on the website. For now we can assume that when a video
-// element plays, the website will also display it somewhere and it will
-// therefore be in the DOM now or in the very near future.
+// Appends media elements that are being played or paused to the document body
+// so that they can be found and used by the isolated content script. An example
+// website that needs this injection is https://soundcloud.com, without it media
+// wouldn't be detected immediately when it starts playing. We do not naively
+// install the hook on video elements of all pages, as this can break websites
+// (e.g. https://reddit.com), since video elements are usually visible on the
+// page. For now we can assume that when a video element plays, the website will
+// also display it somewhere and it will therefore be in the DOM now or in the
+// very near future. We do however install the hook for video elements on sites
+// that are known to play media through a video element that is never appended
+// to the document (e.g. https://open.spotify.com).
 function installMediaElementPrototypeMethodHooks() {
   ['play', 'pause'].forEach(method => {
     installPrototypeMethodHook(HTMLAudioElement.prototype, method);
+    if (Constants.VIDEO_ELEMENT_APPEND_WHITELIST.has(getReverseDomain())) {
+      installPrototypeMethodHook(HTMLVideoElement.prototype, method);
+    }
   });
 }
 

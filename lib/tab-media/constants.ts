@@ -109,4 +109,9 @@ export namespace Constants {
       'audio[src^="/assets/"][src$=".mp3"]'
     ],
   };
+
+  export const VIDEO_ELEMENT_APPEND_WHITELIST: Set<string> = new Set([
+    // Spotify plays audio through video elements.
+    'com.spotify.open',
+  ]);
 }
