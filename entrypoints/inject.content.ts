@@ -50,33 +50,264 @@ function createInaccessibleContainer(
   return container;
 }
 
-const HIDDEN_CONTAINER_CLASS_NAME = 'media-control-extension-container'
+// Limits for how many elements to keep. At a minimum, the stale duration should
+// be set to 1 second, otherwise it's very likely that media playback stops
+// working on websites that don't append media elements to the document.
+const APPENDED_NODES_STALE_SECONDS: number = 30; // min:1
+const APPENDED_NODES_KEEP_COUNT: number = 4; // min:0
+
+const HIDDEN_CONTAINER_CLASS_NAME = 'media-control-extension-root'
+
 let hiddenContainerFingerprint: string | null = null;
 
-function getHiddenRoot(): ShadowRoot {
-  if (hiddenContainerFingerprint !== null) {
-    const elements: NodeListOf<Element> =
-      document.body.querySelectorAll(
-        `.${HIDDEN_CONTAINER_CLASS_NAME}` +
-        `[data-fingerprint="${hiddenContainerFingerprint}"]`);
-    let discoveredRoot: HTMLElement | null = null;
-    for (const element of elements) {
-      if (element instanceof HTMLElement) {
-        discoveredRoot = element;
-        break;
-      }
-    }
-    if (discoveredRoot !== null && discoveredRoot.shadowRoot !== null) {
-      return discoveredRoot.shadowRoot;
+const appendedNodesHistory: Map<number, {
+  node: Node,
+  timestamp: number,
+  order: number,
+}> = new Map();
+
+function removeAppendedNodeByIndex(index: number): void {
+  if (!appendedNodesHistory.delete(index)) {
+    return;
+  }
+  for (const key of [...appendedNodesHistory.keys()]) {
+    const value = appendedNodesHistory.get(key)!;
+    if (key > index) {
+      appendedNodesHistory.delete(key);
+      appendedNodesHistory.set(key - 1, value);
     }
   }
+}
+
+function findHiddenRoot(): ShadowRoot | null {
+  if (hiddenContainerFingerprint === null) {
+    return null;
+  }
+  const elements: NodeListOf<Element> =
+    document.body.querySelectorAll(
+      `.${HIDDEN_CONTAINER_CLASS_NAME}` +
+      `[data-fingerprint="${hiddenContainerFingerprint}"]`);
+  let discoveredRoot: HTMLElement | null = null;
+  for (const element of elements) {
+    if (element instanceof HTMLElement) {
+      discoveredRoot = element;
+      break;
+    }
+  }
+  if (discoveredRoot === null || discoveredRoot.shadowRoot === null) {
+    return null;
+  }
+  return discoveredRoot.shadowRoot;
+}
+
+function createHiddenRoot(): ShadowRoot {
   hiddenContainerFingerprint = crypto.randomUUID();
-  const root = createInaccessibleContainer({
+  const container = createInaccessibleContainer({
     'class': HIDDEN_CONTAINER_CLASS_NAME,
     'data-fingerprint': hiddenContainerFingerprint,
   });
-  document.body.appendChild(root);
-  return root.attachShadow({ mode: 'open' });
+  document.body.appendChild(container);
+  const root = container.attachShadow({ mode: 'open' });
+  // Ensure that, if the site removes the element from the document, we are
+  // aware of this and the history map is updated accordingly.
+  new MutationObserver((mutations: MutationRecord[]) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        let found = false;
+        for (const [index, entry] of appendedNodesHistory) {
+          if (node === entry.node) {
+            removeAppendedNodeByIndex(index);
+            found = true;
+            break;
+          }
+        }
+        console.assert(found);
+      }
+    }
+  }).observe(root, {
+    childList: true,
+  });
+  return root;
+}
+
+function getHiddenRoot(): ShadowRoot {
+  return findHiddenRoot() ?? createHiddenRoot();
+}
+
+function getNodeChildIndex(node: Node, child: Node): number | null {
+  let index = 0;
+  let current = node.firstChild;
+  while (current) {
+    if (current === child) {
+      return index;
+    }
+    current = current?.nextSibling;
+    index++;
+  }
+  return null;
+}
+
+function purgeAppendedNodes(root: ShadowRoot) {
+  const now = new Date().getTime();
+  let purgeIndices: Set<number> = new Set();
+  for (const index of appendedNodesHistory.keys()) {
+    purgeIndices.add(index);
+  }
+  // Only remove stale elements and do not remove any elements that are
+  // currently playing media.
+  for (const [index, item] of appendedNodesHistory) {
+    const delta = now - Math.min(item.timestamp, now);
+    const deltaSeconds = delta / 1000;
+    if (deltaSeconds < APPENDED_NODES_STALE_SECONDS) {
+      purgeIndices.delete(index);
+    }
+    if (item.node instanceof HTMLMediaElement && !item.node.paused) {
+      purgeIndices.delete(index);
+    }
+  }
+  // Do not remove the most recently modified elements.
+  const indexTimestampPairs: [number, number][] =
+    appendedNodesHistory.entries()
+      .map((value): [number, number] => {
+        const [index, item] = value;
+        return [index, item.timestamp];
+      })
+      .toArray()
+      .sort((a, b) => {
+        return b[1] - a[1];
+      });
+  for (let i = 0; i < APPENDED_NODES_KEEP_COUNT; i++) {
+    purgeIndices.delete(indexTimestampPairs[i][0]);
+  }
+  // Remove elements from the document that need to be purged.
+  for (let index = 0; index < root.childNodes.length;) {
+    if (!purgeIndices.has(index)) {
+      // Only increment the index, when the element is kept. When it's deleted,
+      // we continue at the same index, since the element after the deleted
+      // element shifts to that index.
+      index++;
+      continue;
+    }
+    purgeIndices.delete(index);
+    purgeIndices = new Set(purgeIndices.values().map(value => value - 1));
+    const node = root.childNodes[index];
+    console.assert(appendedNodesHistory.has(index));
+    console.assert(node == appendedNodesHistory.get(index)!.node);
+    removeAppendedNodeByIndex(index);
+    node.remove();
+  }
+}
+
+function updateAppendedNodesHistory(node: Node, purge: boolean = false) {
+  let root = findHiddenRoot();
+  if (root === null) {
+    return;
+  }
+  for (const item of appendedNodesHistory.values()) {
+    item.order += 1;
+  }
+  const index = getNodeChildIndex(root, node);
+  if (index === null) {
+    console.assert(false);
+    return;
+  }
+  const timestamp = new Date().getTime();
+  if (appendedNodesHistory.has(index)) {
+    const item = appendedNodesHistory.get(index)!;
+    console.assert(node === item.node);
+    item.timestamp = timestamp;
+    item.order = 0;
+  } else {
+    appendedNodesHistory.set(index, {
+      node: node,
+      timestamp: timestamp,
+      order: 0,
+    });
+  }
+  if (purge) {
+    purgeAppendedNodes(root);
+  }
+}
+
+type MediaElementEvent = keyof HTMLMediaElementEventMap | keyof HTMLVideoElementEventMap
+
+function getMediaElementEvents(element: HTMLMediaElement): MediaElementEvent[] {
+  const sets: MediaElementEvent[][] = [
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement#events
+    [
+      'error',
+      'load',
+    ],
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement#events
+    [
+      'abort',
+      'canplay',
+      'canplaythrough',
+      'durationchange',
+      'emptied',
+      'encrypted',
+      'ended',
+      'error',
+      'loadeddata',
+      'loadedmetadata',
+      'loadstart',
+      'pause',
+      'play',
+      'playing',
+      'progress',
+      'ratechange',
+      'seeked',
+      'seeking',
+      'stalled',
+      'suspend',
+      'timeupdate',
+      'volumechange',
+      'waiting',
+      'waitingforkey',
+    ]
+  ]
+  if (element instanceof HTMLVideoElement) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement#events
+    sets.push([
+      'enterpictureinpicture',
+      'leavepictureinpicture',
+      'resize',
+    ]);
+  }
+  return ([] as MediaElementEvent[]).concat(...sets);
+}
+
+function insertMediaElementIntoDocument(element: HTMLMediaElement) {
+  let appended = false;
+  if (!findRootNodes().some(root => root.contains(element))) {
+    // Append the element to the hidden root that is located inside the
+    // document, so the isolated media content script can access it.
+    getHiddenRoot().appendChild(element);
+    // Delay time-sensitive operations.
+    setTimeout(() => {
+      // Any element mutation (e.g. adding a "src") should trigger an update.
+      new MutationObserver(() => {
+        updateAppendedNodesHistory(element);
+      }).observe(element, {
+        attributes: true,
+      });
+      // Any media event (e.g. "play" or "pause") should trigger an update.
+      if (element instanceof HTMLMediaElement) {
+        for (const event of getMediaElementEvents(element)) {
+          element.addEventListener(event, () => {
+            updateAppendedNodesHistory(element);
+          });
+        }
+      }
+    });
+    appended = true;
+  }
+  // Delay time-sensitive operations.
+  setTimeout(() => {
+    // We only need to purge existing elements when new elements are appended,
+    // as in other cases there is no risk of bloating the document.
+    updateAppendedNodesHistory(element, appended);
+  });
 }
 
 // Overrides the Audio class constructor so that any newly created Audio element
@@ -88,7 +319,7 @@ function installAudioConstructorHook() {
   window.Audio = function (...args: ConstructorParameters<typeof Audio>) {
     const audio = new OriginalAudio(...args);
     // console.log('[audio constructor]', audio);
-    getHiddenRoot().appendChild(audio);
+    insertMediaElementIntoDocument(audio);
     return audio;
   } as unknown as typeof Audio;
   window.Audio.prototype = OriginalAudio.prototype;
@@ -99,10 +330,9 @@ function installPrototypeMethodHook(prototype: any, method: string) {
   prototype[method] = function () {
     // console.log('[prototype method hook]', prototype, method, document.contains(this));
     const result = original.apply(this, arguments);
-    console.assert(this instanceof Node);
-    if (!findRootNodes().some(root => root.contains(this))) {
-      getHiddenRoot().appendChild(this);
-    }
+    const element = this;
+    console.assert(element instanceof Node);
+    insertMediaElementIntoDocument(element);
     return result
   };
 }
