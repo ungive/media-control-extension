@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Fixed a bug where videos would still disappear in rare cases. This was due to appending video elements to the document in order for them to be accessible to the extension's content script, which could sometimes move them away from their intended position. Video elements are now only appended on websites that really need it (currently only Spotify)
+- Fixed a bug where appended video elements were visible on the site, when they should not be
+- The extension now removes media elements again that were appended to the document, when they are no longer in use
+- In a future version this behaviour may be reworked, so that media elements do not have to be appended to the document anymore
+
 ## 0.1.3
 
 - The progress bar can now be dragged, instead of just being clickable
