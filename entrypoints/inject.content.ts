@@ -32,14 +32,14 @@ function installPrototypeMethodHook(prototype: any, method: string) {
 // Appends any audio elements that are being played or paused to the document
 // body so that they can be found and used by the isolated content script. An
 // example website that needs this injection is https://soundcloud.com, without
-// it media wouldn't be detected immediately when it starts playing.
+// it media wouldn't be detected immediately when it starts playing. We do not
+// install the hook on video elements. We don't want to append video elements
+// to the DOM, if they are not present, as this can break websites, since video
+// elements are visible on the website. For now we can assume that when a video
+// element plays, the website will also display it somewhere and it will
+// therefore be in the DOM now or in the very near future.
 function installMediaElementPrototypeMethodHooks() {
   ['play', 'pause'].forEach(method => {
-    // Do not install the hook on video elements. We don't want to append video
-    // elements to the DOM, if they are not present, as this can break websites,
-    // since video elements are visually visible. For now we can assume that
-    // when a video element plays, the website will also display it somewhere
-    // and it will therefore be in the DOM now or very soon.
     installPrototypeMethodHook(HTMLAudioElement.prototype, method);
   });
 }
